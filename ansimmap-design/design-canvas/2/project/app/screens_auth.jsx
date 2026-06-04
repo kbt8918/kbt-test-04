@@ -1,0 +1,301 @@
+// screens_auth.jsx — SCR-001 로그인/회원가입, SCR-002 온보딩, SCR-005 가족 그룹
+const { useState: useStateA, useEffect: useEffectA } = React;
+
+function fmtPhone(v) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length < 4) return d;
+  if (d.length < 8) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+}
+
+/* fake QR matrix — stable pattern with 3 finder squares */
+function QrCode({ size = 132 }) {
+  const n = 21, cell = size / n;
+  const finder = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+  const inFinder = (r, c) => {
+    const blocks = [[0, 0], [0, n - 7], [n - 7, 0]];
+    return blocks.some(([br, bc]) => {
+      const rr = r - br, cc = c - bc;
+      if (rr < 0 || rr > 6 || cc < 0 || cc > 6) return false;
+      const edge = rr === 0 || rr === 6 || cc === 0 || cc === 6;
+      const core = rr >= 2 && rr <= 4 && cc >= 2 && cc <= 4;
+      return edge || core;
+    });
+  };
+  const cells = [];
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    let on = false;
+    if (finder(r, c)) on = inFinder(r, c);
+    else on = ((r * 7 + c * 13 + r * c * 3) % 5) < 2;
+    if (on) cells.push(<rect key={`${r}-${c}`} x={c * cell} y={r * cell} width={cell} height={cell} fill="#212121" />);
+  }
+  return <svg width={size} height={size} style={{ background: '#fff', borderRadius: 8 }}>{cells}</svg>;
+}
+
+/* ════════════════════ SCR-001 로그인 / 회원가입 ════════════════════ */
+function LoginScreen() {
+  const { nav, set, toast } = useApp();
+  const [tab, setTab] = useStateA('register');
+  const [phone, setPhone] = useStateA('');
+  const [role, setRole] = useStateA('parent');
+  const [agree, setAgree] = useStateA(false);
+  const valid = phone.replace(/\D/g, '').length >= 10 && (tab === 'login' || agree);
+
+  const submit = () => {
+    if (!valid) return;
+    if (tab === 'login') {
+      // 데모: 등록된 번호만 통과
+      if (phone.replace(/\D/g, '') !== '01012345678') {
+        toast('등록되지 않은 번호입니다. 회원가입 탭을 눌러 가입해 주세요.', 'danger');
+        return;
+      }
+      set({ role: 'family', phone });
+      nav('family', 'right');
+    } else {
+      set({ role, phone });
+      if (role === 'parent') { set({ onboardingStep: 1 }); nav('onboarding', 'right'); }
+      else nav('group', 'right');
+    }
+  };
+
+  return (
+    <div className="scroll-y" style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ paddingTop: TOP_INSET + 24, padding: `${TOP_INSET + 24}px 24px 32px`, display: 'flex', flexDirection: 'column', flex: 1 }}>
+        {/* brand lockup */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, marginBottom: 36, marginTop: 12 }}>
+          <BrandMark size={72} />
+          <div style={{ textAlign: 'center' }}>
+            <div className="t-display" style={{ color: 'var(--brand-dark)', fontWeight: 800, fontSize: 'calc(32px*var(--fz))' }}>안심맵</div>
+            <div className="t-h3" style={{ color: 'var(--g500)', fontWeight: 500, marginTop: 4 }}>부모님 위치 확인 서비스</div>
+          </div>
+        </div>
+
+        {/* tabs */}
+        <div style={{ display: 'flex', background: 'var(--g100)', borderRadius: 12, padding: 4, marginBottom: 28 }}>
+          {[['login', '로그인'], ['register', '회원가입']].map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)} style={{ flex: 1, height: 44, borderRadius: 9,
+              background: tab === k ? '#fff' : 'transparent', color: tab === k ? 'var(--brand-dark)' : 'var(--g500)',
+              fontWeight: 700, fontSize: 'calc(16px*var(--fz))', boxShadow: tab === k ? '0 1px 4px rgba(0,0,0,.1)' : 'none', transition: 'all .15s' }}>{l}</button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22, flex: 1 }}>
+          <Field label="휴대폰 번호" value={phone} onChange={v => setPhone(fmtPhone(v))} placeholder="010-1234-5678" type="tel" big />
+
+          {tab === 'register' && (
+            <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label className="t-h3" style={{ color: 'var(--g800)' }}>역할 선택</label>
+                <RadioGroup value={role} onChange={setRole}
+                  options={[{ value: 'parent', emoji: '👵', label: '부모님' }, { value: 'family', emoji: '🧑', label: '가족 자녀' }]} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label className="t-h3" style={{ color: 'var(--g800)' }}>약관 동의</label>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <CheckRow checked={agree} onChange={setAgree} required>개인정보처리방침 동의</CheckRow>
+                  <button onClick={() => toast('개인정보처리방침 페이지로 이동합니다.')} className="t-body-sm press" style={{ color: 'var(--info)', fontWeight: 700, padding: 8, whiteSpace: 'nowrap' }}>보기</button>
+                </div>
+              </div>
+            </div>
+          )}
+          {tab === 'login' && (
+            <Banner tone="grey" icon="bell">데모 번호 <b className="mono">010-1234-5678</b> 로 로그인하면 가족 화면으로 이동합니다.</Banner>
+          )}
+        </div>
+
+        <div style={{ marginTop: 24 }}>
+          <Btn size="lg" disabled={!valid} onClick={submit}>{tab === 'login' ? '시작하기' : '동의하고 시작하기'}</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════ SCR-002 온보딩 1~4 ════════════════════ */
+function OnboardingScreen() {
+  const { state, set, nav, toast } = useApp();
+  const step = state.onboardingStep || 1;
+  const [code, setCode] = useStateA('');
+  const [reqConsent, setReqConsent] = useStateA(false);
+  const [optConsent, setOptConsent] = useStateA(false);
+  const [perm, setPerm] = useStateA(false); // geolocation permission modal
+
+  useEffectA(() => { localStorage.setItem('ansim_onboarding', String(step)); }, [step]);
+  const go = s => set({ onboardingStep: s });
+
+  const header = (
+    <div style={{ paddingTop: TOP_INSET, padding: `${TOP_INSET}px 20px 14px`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--g100)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {step > 1 && <button className="press" onClick={() => go(step - 1)} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: -8 }}><Icon name="back" size={24} color="var(--g700)" stroke={2.2} /></button>}
+        <span className="t-h3" style={{ color: 'var(--g700)', fontWeight: 700 }}>안심맵 온보딩</span>
+      </div>
+      <Pill tone="on">{step} / 4</Pill>
+    </div>
+  );
+
+  const progress = (
+    <div style={{ display: 'flex', gap: 6, padding: '0 20px', marginBottom: 24 }}>
+      {[1, 2, 3, 4].map(i => <div key={i} style={{ flex: 1, height: 6, borderRadius: 999, background: i <= step ? 'var(--brand)' : 'var(--g200)', transition: 'background .3s' }} />)}
+    </div>
+  );
+
+  let body, footer;
+  if (step === 1) {
+    body = (
+      <div className="slide-in" style={{ padding: '8px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 20, marginTop: 24 }}>
+        <div style={{ fontSize: 80 }}>👵💚</div>
+        <div className="t-h1" style={{ color: 'var(--g900)' }}>안녕하세요, 부모님!</div>
+        <p className="t-h3" style={{ color: 'var(--g600)', fontWeight: 500, lineHeight: 1.6, maxWidth: 280 }}>
+          가족이 항상 안심할 수 있도록 위치를 공유해요. 설정은 자녀가 옆에서 도와드릴 수 있어요. 4단계면 끝납니다.
+        </p>
+      </div>
+    );
+    footer = <Btn size="lg" onClick={() => go(2)}>시작하기</Btn>;
+  } else if (step === 2) {
+    body = (
+      <div className="slide-in" style={{ padding: '8px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div className="t-h2" style={{ color: 'var(--g900)' }}>자녀 휴대폰에 표시된 가족 초대 코드를 입력해 주세요.</div>
+        <Field label="초대 코드 (6자리)" value={code} onChange={v => setCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))} mono big placeholder="------" />
+        <Banner tone="grey" icon="users">코드는 가족 자녀가 그룹을 만들면 받을 수 있어요.</Banner>
+      </div>
+    );
+    footer = <Btn size="lg" disabled={code.length < 6} onClick={() => { set({ inviteCode: code }); go(3); }}>다음 단계로</Btn>;
+  } else if (step === 3) {
+    body = (
+      <div className="slide-in" style={{ padding: '8px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', gap: 10, padding: '14px 16px', background: '#FFF4E5', border: '2px solid #F0A33A', borderRadius: 14 }}>
+          <Icon name="alert" size={26} color="#B25E00" stroke={2.2} />
+          <div>
+            <div className="t-h3" style={{ color: '#B25E00', fontWeight: 800 }}>부모님 직접 조작 필수</div>
+            <div className="t-body-sm" style={{ color: '#9A5400', marginTop: 3, lineHeight: 1.5 }}>자녀의 대리 동의는 법적 처벌 대상이 될 수 있습니다.</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <CheckRow checked={reqConsent} onChange={setReqConsent} required>개인 위치정보 수집·이용 및 제3자 제공 동의</CheckRow>
+          <CheckRow checked={optConsent} onChange={setOptConsent}>[선택] 혜택 및 알림 수신 동의</CheckRow>
+        </div>
+        <button onClick={() => toast('위치기반서비스 이용약관 전문을 표시합니다.')} className="t-body-sm press" style={{ color: 'var(--info)', fontWeight: 700, alignSelf: 'flex-start' }}>약관 전문 내용보기</button>
+      </div>
+    );
+    footer = <Btn size="lg" disabled={!reqConsent} onClick={() => setPerm(true)}>위치 공유 시작하기</Btn>;
+  } else {
+    body = (
+      <div className="slide-in" style={{ padding: '8px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 20, marginTop: 24 }}>
+        <div style={{ width: 96, height: 96, borderRadius: 999, background: 'var(--brand-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="checkCircle" size={56} color="var(--brand)" stroke={2.2} />
+        </div>
+        <div className="t-h1" style={{ color: 'var(--g900)' }}>설정이 완료되었어요!</div>
+        <p className="t-h3" style={{ color: 'var(--g600)', fontWeight: 500, lineHeight: 1.6, maxWidth: 280 }}>
+          이제 가족들이 부모님의 위치를 확인할 수 있어요. 긴급할 땐 SOS 버튼만 누르세요.
+        </p>
+        {state.permDenied && <Banner tone="warn" icon="alert">위치 권한이 꺼져 있어요. 메인 화면 안내를 확인해 주세요.</Banner>}
+      </div>
+    );
+    footer = <Btn size="lg" onClick={() => { set({ onboarded: true }); localStorage.removeItem('ansim_onboarding'); nav('parent', 'right'); }}>안심맵 시작하기</Btn>;
+  }
+
+  return (
+    <div style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {header}
+      <div className="scroll-y" style={{ flex: 1, paddingTop: 20 }}>{progress}{body}</div>
+      <div style={{ padding: '12px 24px calc(22px + 12px)', borderTop: '1px solid var(--g100)' }}>{footer}</div>
+
+      {/* fake browser geolocation permission */}
+      <BottomSheet open={perm} onClose={() => setPerm(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Icon name="mapPin" size={32} color="var(--brand)" stroke={2} />
+            <div className="t-h3" style={{ color: 'var(--g900)' }}>'안심맵'에서 사용자의 위치에 접근하도록 허용하시겠습니까?</div>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Btn variant="outline" onClick={() => { setPerm(false); set({ permDenied: true }); go(4); }}>허용 안 함</Btn>
+            <Btn onClick={() => { setPerm(false); set({ permDenied: false, locationSharing: true }); go(4); }}>허용</Btn>
+          </div>
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}
+
+/* ════════════════════ SCR-005 가족 그룹 생성 및 참여 ════════════════════ */
+function GroupScreen() {
+  const { state, set, nav, toast } = useApp();
+  const [mode, setMode] = useStateA('select'); // select | create | join | done
+  const [name, setName] = useStateA('');
+  const [code, setCode] = useStateA('');
+  const [err, setErr] = useStateA('');
+  const inviteCode = state.groupCode || 'KOEL92';
+
+  const copy = () => { toast('초대 코드가 클립보드에 복사되었습니다.', 'success'); };
+
+  let content;
+  if (mode === 'select') {
+    content = (
+      <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '8px 24px' }}>
+        <div className="t-h2" style={{ color: 'var(--g900)' }}>서비스를 시작하기 위해 그룹을 선택하거나 새로 만드세요.</div>
+        <Card pad={20} onClick={() => setMode('create')} style={{ display: 'flex', alignItems: 'center', gap: 14, border: '1.5px solid var(--g200)' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--brand-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="plus" size={26} color="var(--brand)" stroke={2.4} /></div>
+          <div style={{ flex: 1 }}><div className="t-h3" style={{ color: 'var(--g900)' }}>새로운 가족 그룹 생성</div><div className="t-body-sm" style={{ color: 'var(--g500)' }}>부모님과 가족을 초대하세요</div></div>
+          <Icon name="chevronRight" size={22} color="var(--g400)" />
+        </Card>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--g400)' }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--g200)' }} /><span className="t-body-sm">또는</span><div style={{ flex: 1, height: 1, background: 'var(--g200)' }} />
+        </div>
+        <Card pad={20} onClick={() => setMode('join')} style={{ display: 'flex', alignItems: 'center', gap: 14, border: '1.5px solid var(--g200)' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--g100)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="qr" size={26} color="var(--g700)" stroke={2} /></div>
+          <div style={{ flex: 1 }}><div className="t-h3" style={{ color: 'var(--g900)' }}>초대 코드로 그룹 참여</div><div className="t-body-sm" style={{ color: 'var(--g500)' }}>코드 입력 또는 QR 스캔</div></div>
+          <Icon name="chevronRight" size={22} color="var(--g400)" />
+        </Card>
+      </div>
+    );
+  } else if (mode === 'create') {
+    content = (
+      <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '8px 24px' }}>
+        <div className="t-h2" style={{ color: 'var(--g900)' }}>가족 그룹의 이름을 정해 주세요.</div>
+        <Field label="그룹 이름" value={name} onChange={setName} placeholder="예) 마포구 홍길동가" big />
+        <Btn size="lg" disabled={!name.trim()} onClick={() => { set({ groupName: name, groupCreated: true }); setMode('done'); }}>그룹 만들기</Btn>
+      </div>
+    );
+  } else if (mode === 'join') {
+    content = (
+      <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '8px 24px' }}>
+        <div className="t-h2" style={{ color: 'var(--g900)' }}>초대 코드 6자리를 입력하세요.</div>
+        <Field label="초대 코드" value={code} onChange={v => { setErr(''); setCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)); }} mono big placeholder="------" error={err} />
+        <button className="press" onClick={() => toast('카메라 QR 스캐너를 실행합니다.')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 12, border: '1.5px dashed var(--g300)', color: 'var(--g600)', fontWeight: 700, fontSize: 'calc(15px*var(--fz))' }}>
+          <Icon name="qr" size={22} color="var(--g600)" stroke={2} /> QR 코드 스캔하기
+        </button>
+        <Btn size="lg" disabled={code.length < 6} onClick={() => {
+          if (code === 'FULL00') { setErr('그룹 인원 한도(5명)를 초과하여 진입할 수 없습니다.'); return; }
+          set({ groupCode: code, joined: true }); nav('family', 'right');
+        }}>그룹 참여하기</Btn>
+        <Banner tone="grey" icon="bell">데모: <b className="mono">FULL00</b> 입력 시 정원 초과 오류를 볼 수 있어요.</Banner>
+      </div>
+    );
+  } else {
+    content = (
+      <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, padding: '8px 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: 56 }}>🎉</div>
+        <div className="t-h1" style={{ color: 'var(--g900)' }}>그룹 생성이 완료되었습니다!</div>
+        <p className="t-h3" style={{ color: 'var(--g600)', fontWeight: 500 }}>부모님과 다른 가족 자녀를 초대해 보세요.</p>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+          <span className="t-body-sm" style={{ color: 'var(--g500)', fontWeight: 600, textAlign: 'left' }}>초대 코드 (6자리)</span>
+          <button className="press" onClick={copy} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, height: 64, borderRadius: 14, background: 'var(--brand-light)', border: '2px solid var(--brand)' }}>
+            <span className="mono" style={{ fontSize: 'calc(30px*var(--fz))', fontWeight: 800, letterSpacing: '.22em', color: 'var(--brand-dark)' }}>{inviteCode}</span>
+            <Icon name="copy" size={22} color="var(--brand)" stroke={2} />
+          </button>
+        </div>
+        <div style={{ padding: 12, background: '#fff', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,.06)', marginTop: 4 }}><QrCode size={132} /></div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+      <MobileHeader title={mode === 'done' ? '초대하기' : '가족 그룹 설정'} onBack={mode === 'select' || mode === 'done' ? () => nav('login', 'left') : () => setMode('select')} />
+      <div className="scroll-y" style={{ flex: 1, paddingTop: 16 }}>{content}</div>
+      {mode === 'done' && <div style={{ padding: '12px 24px calc(22px + 12px)' }}><Btn size="lg" icon="mapPin" onClick={() => nav('family', 'right')}>지도 보러가기</Btn></div>}
+    </div>
+  );
+}
+
+Object.assign(window, { LoginScreen, OnboardingScreen, GroupScreen, QrCode, fmtPhone });
