@@ -1,0 +1,147 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* 안심맵 디자인 토큰 — design_style_guide.md v1.0 */
+  --brand: #2e7d32;
+  --brand-dark: #1b5e20;
+  --brand-mint: #4caf50;
+  --brand-light: #e8f5e9;
+  --g50: #fafafa;
+  --g100: #f5f5f5;
+  --g200: #eeeeee;
+  --g300: #e0e0e0;
+  --g400: #bdbdbd;
+  --g500: #9e9e9e;
+  --g600: #757575;
+  --g700: #616161;
+  --g800: #424242;
+  --g900: #212121;
+  --danger: #d32f2f;
+  --danger-light: #ffebee;
+  --info: #1976d2;
+  --fz: 1; /* senior font scale */
+  --font: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif;
+  --mono: "Monaco", "Consolas", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--g900);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography scale (design_style_guide §4) ── */
+.t-display {
+  font-size: calc(36px * var(--fz));
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.t-h1 {
+  font-size: calc(24px * var(--fz));
+  font-weight: 700;
+  line-height: 1.33;
+  letter-spacing: -0.01em;
+}
+.t-h2 {
+  font-size: calc(20px * var(--fz));
+  font-weight: 600;
+  line-height: 1.4;
+}
+.t-h3 {
+  font-size: calc(16px * var(--fz));
+  font-weight: 600;
+  line-height: 1.5;
+}
+.t-body {
+  font-size: calc(16px * var(--fz));
+  font-weight: 400;
+  line-height: 1.5;
+}
+.t-body-md {
+  font-size: calc(16px * var(--fz));
+  font-weight: 500;
+  line-height: 1.5;
+}
+.t-body-sm {
+  font-size: calc(13px * var(--fz));
+  font-weight: 400;
+  line-height: 1.38;
+  letter-spacing: 0.01em;
+}
+.t-caption {
+  font-size: calc(12px * var(--fz));
+  font-weight: 600;
+  line-height: 1.33;
+  letter-spacing: 0.02em;
+}
+.t-overline {
+  font-size: calc(11px * var(--fz));
+  font-weight: 700;
+  line-height: 1.27;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.mono {
+  font-family: var(--mono);
+}
+
+/* ── Scroll helpers ── */
+.scroll-y {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll-y::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* ── Press feedback (햅틱 모사) ── */
+.press {
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s,
+    background-color 0.15s;
+}
+.press:active {
+  transform: scale(0.96);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* slide-in keeps opacity stable (frozen-clock safe — see design chat) */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in {
+    animation: none;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+  background-size: 200% 100%;
+}

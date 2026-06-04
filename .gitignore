@@ -23,3 +23,5 @@ upload_to_nlm.py
 
 # 로컬 도구 상태
 .local/
+
+.vercel
