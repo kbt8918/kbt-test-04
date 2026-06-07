@@ -17,6 +17,7 @@ import {
   IconBtn,
   MobileHeader,
   Pill,
+  Toggle,
 } from "../ui";
 
 const { useState, useEffect, useRef } = React;
@@ -83,7 +84,7 @@ export function FamilyMap() {
         overflow: "hidden",
       }}
     >
-      <MobileHeader brand right={<IconBtn name="settings" onClick={() => toast("가족 설정 메뉴입니다.")} />} />
+      <MobileHeader brand right={<IconBtn name="settings" onClick={() => nav("family-settings", "right")} />} />
 
       <div style={{ flex: 1, position: "relative" }}>
         <MapView
@@ -1029,6 +1030,343 @@ export function FamilyGeofence() {
               }}
             >
               Pro 업그레이드
+            </Btn>
+          </div>
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}
+
+/* ════════════════════ SCR-010 가족 설정 ════════════════════ */
+type UpdateInterval = "30s" | "1m" | "3m";
+
+export function FamilySettings() {
+  const { nav, toast } = useApp();
+  const [locationAlert, setLocationAlert] = useState(true);
+  const [batteryAlert, setBatteryAlert] = useState(true);
+  const [interval, setInterval] = useState<UpdateInterval>("30s");
+  const [leaveOpen, setLeaveOpen] = useState(false);
+
+  const SectionLabel = ({ icon, label, danger }: { icon: string; label: string; danger?: boolean }) => (
+    <div
+      className="t-overline"
+      style={{
+        color: danger ? "var(--danger)" : "var(--g500)",
+        padding: "0 4px 10px",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+      }}
+    >
+      <Icon name={icon} size={16} color={danger ? "var(--danger)" : "var(--g500)"} stroke={2} /> {label}
+    </div>
+  );
+
+  const ToggleRow = ({
+    icon,
+    label,
+    sub,
+    on,
+    onChange,
+    locked,
+  }: {
+    icon: string;
+    label: string;
+    sub?: string;
+    on?: boolean;
+    onChange?: (v: boolean) => void;
+    locked?: boolean;
+  }) => (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "14px 16px",
+        background: "#fff",
+        borderBottom: "1px solid var(--g100)",
+      }}
+    >
+      <Icon name={icon} size={20} color={locked ? "var(--g400)" : "var(--g600)"} stroke={2} />
+      <div style={{ flex: 1 }}>
+        <div className="t-body-md" style={{ color: locked ? "var(--g500)" : "var(--g900)" }}>
+          {label}
+        </div>
+        {sub && (
+          <div className="t-body-sm" style={{ color: "var(--g400)", marginTop: 2 }}>
+            {sub}
+          </div>
+        )}
+      </div>
+      {locked ? (
+        <span
+          className="t-caption"
+          style={{ color: "var(--g500)", padding: "4px 10px", background: "var(--g100)", borderRadius: 6 }}
+        >
+          항상 켜짐
+        </span>
+      ) : (
+        <Toggle on={!!on} onChange={onChange ?? (() => {})} />
+      )}
+    </div>
+  );
+
+  const ArrowRow = ({
+    icon,
+    label,
+    right,
+    onClick,
+  }: {
+    icon: string;
+    label: string;
+    right?: string;
+    onClick: () => void;
+  }) => (
+    <button
+      className="press"
+      onClick={onClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        width: "100%",
+        padding: "16px 16px",
+        background: "#fff",
+        borderBottom: "1px solid var(--g100)",
+      }}
+    >
+      <Icon name={icon} size={20} color="var(--g600)" stroke={2} />
+      <span className="t-body-md" style={{ color: "var(--g800)", flex: 1, textAlign: "left" }}>
+        {label}
+      </span>
+      {right && (
+        <span className="t-body-sm" style={{ color: "var(--g400)" }}>
+          {right}
+        </span>
+      )}
+      <Icon name="chevronRight" size={20} color="var(--g400)" />
+    </button>
+  );
+
+  const INTERVALS: { value: UpdateInterval; label: string }[] = [
+    { value: "30s", label: "30초" },
+    { value: "1m", label: "1분" },
+    { value: "3m", label: "3분 (절약)" },
+  ];
+
+  return (
+    <div
+      style={{
+        height: "100%",
+        background: "var(--g50)",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+      }}
+    >
+      <MobileHeader title="가족 설정" onBack={() => nav("family", "left")} />
+      <div
+        className="scroll-y"
+        style={{ flex: 1, padding: "20px 16px", display: "flex", flexDirection: "column", gap: 24 }}
+      >
+        {/* 가족 구성원 */}
+        <div>
+          <SectionLabel icon="users" label="가족 구성원" />
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "14px 16px",
+                borderBottom: "1px solid var(--g100)",
+              }}
+            >
+              <Avatar emoji="👵" size={44} ring="var(--brand)" />
+              <div style={{ flex: 1 }}>
+                <div className="t-body-md" style={{ color: "var(--g900)", fontWeight: 600 }}>
+                  홍길순 <span style={{ color: "var(--g500)", fontWeight: 400 }}>(어머니)</span>
+                </div>
+                <div className="t-body-sm" style={{ color: "var(--g500)", marginTop: 2 }}>
+                  010-1234-5678 · 연결됨
+                </div>
+              </div>
+              <Pill tone="on" dot>
+                활성
+              </Pill>
+            </div>
+            <button
+              className="press"
+              onClick={() => toast("가족 초대 링크를 복사했습니다.", "success")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                width: "100%",
+                padding: "14px 16px",
+                background: "#fff",
+              }}
+            >
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 999,
+                  background: "var(--brand-light)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="plus" size={22} color="var(--brand)" stroke={2.4} />
+              </div>
+              <span className="t-body-md" style={{ color: "var(--brand-dark)", flex: 1, textAlign: "left" }}>
+                가족 구성원 초대하기
+              </span>
+              <Icon name="chevronRight" size={20} color="var(--g400)" />
+            </button>
+          </Card>
+        </div>
+
+        {/* 알림 설정 */}
+        <div>
+          <SectionLabel icon="bell" label="알림 설정" />
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            <ToggleRow icon="sos" label="SOS 긴급 알림" sub="수신 중단 불가" locked />
+            <ToggleRow
+              icon="mapPin"
+              label="위치 갱신 알림"
+              sub={locationAlert ? "이동 감지 시 즉시 알림" : "알림 꺼짐"}
+              on={locationAlert}
+              onChange={(v) => {
+                setLocationAlert(v);
+                toast(v ? "위치 갱신 알림을 켰어요." : "위치 갱신 알림을 껐어요.");
+              }}
+            />
+            <ToggleRow
+              icon="battery"
+              label="배터리 부족 알림"
+              sub={batteryAlert ? "20% 이하 시 알림" : "알림 꺼짐"}
+              on={batteryAlert}
+              onChange={(v) => {
+                setBatteryAlert(v);
+                toast(v ? "배터리 부족 알림을 켰어요." : "배터리 부족 알림을 껐어요.");
+              }}
+            />
+          </Card>
+        </div>
+
+        {/* 위치 갱신 주기 */}
+        <div>
+          <SectionLabel icon="clock" label="위치 갱신 주기" />
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            {INTERVALS.map((iv) => (
+              <button
+                key={iv.value}
+                className="press"
+                onClick={() => {
+                  setInterval(iv.value);
+                  toast(`위치 갱신 주기를 ${iv.label}로 변경했어요.`);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  width: "100%",
+                  padding: "14px 16px",
+                  background: interval === iv.value ? "var(--brand-light)" : "#fff",
+                  borderBottom: "1px solid var(--g100)",
+                }}
+              >
+                <span
+                  className="t-body-md"
+                  style={{
+                    flex: 1,
+                    textAlign: "left",
+                    color: interval === iv.value ? "var(--brand-dark)" : "var(--g800)",
+                    fontWeight: interval === iv.value ? 700 : 500,
+                  }}
+                >
+                  {iv.label}
+                </span>
+                {interval === iv.value && <Icon name="check" size={20} color="var(--brand)" stroke={2.5} />}
+              </button>
+            ))}
+          </Card>
+        </div>
+
+        {/* 앱 정보 */}
+        <div>
+          <SectionLabel icon="doc" label="앱 정보" />
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            <ArrowRow icon="doc" label="개인정보처리방침" onClick={() => toast("개인정보처리방침 페이지를 표시합니다.")} />
+            <ArrowRow
+              icon="mapPin"
+              label="위치기반서비스 이용약관"
+              onClick={() => toast("위치기반서비스 이용약관을 표시합니다.")}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 16px", background: "#fff" }}>
+              <Icon name="shieldCheck" size={20} color="var(--g600)" stroke={2} />
+              <span className="t-body-md" style={{ flex: 1, color: "var(--g800)" }}>
+                앱 버전
+              </span>
+              <span className="t-body-sm" style={{ color: "var(--g400)" }}>
+                v1.0.0
+              </span>
+            </div>
+          </Card>
+        </div>
+
+        {/* 위험 구역 */}
+        <div>
+          <SectionLabel icon="alert" label="위험 구역" danger />
+          <Card pad={18} style={{ border: "1.5px solid var(--danger-light)" }}>
+            <p className="t-body" style={{ color: "var(--g700)", marginBottom: 14, lineHeight: 1.5 }}>
+              그룹에서 나가면 부모님의 위치를 더 이상 확인할 수 없습니다.
+            </p>
+            <Btn variant="dangerGhost" icon="logout" onClick={() => setLeaveOpen(true)}>
+              가족 그룹에서 나가기
+            </Btn>
+          </Card>
+        </div>
+      </div>
+
+      <BottomSheet open={leaveOpen} onClose={() => setLeaveOpen(false)}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 999,
+              background: "var(--danger-light)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon name="alert" size={30} color="var(--danger)" stroke={2.2} />
+          </div>
+          <div className="t-h2" style={{ color: "var(--g900)" }}>
+            정말 그룹에서 나가시겠어요?
+          </div>
+          <p className="t-body" style={{ color: "var(--g600)", lineHeight: 1.5 }}>
+            그룹에서 나가면 부모님의 실시간 위치와 이동 기록을 더 이상 볼 수 없습니다. 다시 참여하려면 초대 링크가 필요합니다.
+          </p>
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <Btn variant="outline" onClick={() => setLeaveOpen(false)}>
+              취소
+            </Btn>
+            <Btn
+              variant="danger"
+              onClick={() => {
+                setLeaveOpen(false);
+                toast("가족 그룹에서 나갔습니다.", "danger");
+                setTimeout(() => nav("login", "left"), 600);
+              }}
+            >
+              나가기
             </Btn>
           </div>
         </div>

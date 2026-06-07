@@ -13,6 +13,7 @@ export type Route =
   | "family-history"
   | "family-chat"
   | "family-geofence"
+  | "family-settings"
   | "admin";
 
 export type ToastTone = "default" | "danger" | "success";

@@ -15,7 +15,7 @@ import { BrandMark, Toast } from "./ui";
 import { ChromeWindow, FitStage, IOSDevice } from "./Frames";
 import { LoginScreen, OnboardingScreen, GroupScreen } from "./screens/auth";
 import { ParentMain, ParentSettings } from "./screens/parent";
-import { FamilyMap, FamilyHistory, FamilyChat, FamilyGeofence } from "./screens/family";
+import { FamilyMap, FamilyHistory, FamilyChat, FamilyGeofence, FamilySettings } from "./screens/family";
 import { AdminApp } from "./screens/admin";
 
 const { useState, useEffect, useCallback } = React;
@@ -30,7 +30,7 @@ interface Flow {
 const FLOWS: Flow[] = [
   { key: "auth", label: "로그인·온보딩", icon: "user", entry: "login", routes: ["login", "onboarding", "group"] },
   { key: "parent", label: "부모님", icon: "sos", entry: "parent", routes: ["parent", "parent-settings"] },
-  { key: "family", label: "가족", icon: "mapPin", entry: "family", routes: ["family", "family-history", "family-chat", "family-geofence"] },
+  { key: "family", label: "가족", icon: "mapPin", entry: "family", routes: ["family", "family-history", "family-chat", "family-geofence", "family-settings"] },
   { key: "admin", label: "관리자", icon: "chart", entry: "admin", routes: ["admin"] },
 ];
 const ROUTE_NAMES: Record<Route, string> = {
@@ -43,7 +43,8 @@ const ROUTE_NAMES: Record<Route, string> = {
   "family-history": "SCR-007 위치 이력",
   "family-chat": "SCR-008 가족 채팅",
   "family-geofence": "SCR-009 안전 구역",
-  admin: "SCR-010~012 관리자 어드민",
+  "family-settings": "SCR-010 가족 설정",
+  admin: "SCR-011~013 관리자 어드민",
 };
 
 export function PrototypeShell() {
@@ -92,6 +93,8 @@ export function PrototypeShell() {
         return <FamilyChat />;
       case "family-geofence":
         return <FamilyGeofence />;
+      case "family-settings":
+        return <FamilySettings />;
       case "admin":
         return <AdminApp />;
       default:

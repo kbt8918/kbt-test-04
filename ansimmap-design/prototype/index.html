@@ -1417,7 +1417,7 @@ function FamilyMap() {
 
   return (
     <div style={{ height: '100%', background: 'var(--g100)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-      <MobileHeader brand right={<IconBtn name="settings" onClick={() => toast('가족 설정 메뉴입니다.')} />} />
+      <MobileHeader brand right={<IconBtn name="settings" onClick={() => nav('family-settings', 'right')} />} />
 
       <div style={{ flex: 1, position: 'relative' }}>
         <FakeMap markers={markers} dim={!sharing} grey={!sharing} />
@@ -1703,6 +1703,138 @@ function FamilyGeofence() {
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
             <Btn variant="outline" onClick={() => { setUpsell(false); toast('안전 구역이 저장되었습니다.', 'success'); setTimeout(() => nav('family', 'left'), 500); }}>이대로 저장</Btn>
             <Btn onClick={() => { setUpsell(false); toast('Pro 플랜 안내 페이지로 이동합니다.'); }}>Pro 업그레이드</Btn>
+          </div>
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}
+
+/* ════════════════════ SCR-010 가족 설정 ════════════════════ */
+function FamilySettings() {
+  const { nav, toast } = useApp();
+  const [locationAlert, setLocationAlert] = useState(true);
+  const [batteryAlert,  setBatteryAlert]  = useState(true);
+  const [interval,      setInterval]      = useState('30s');
+  const [leaveOpen,     setLeaveOpen]     = useState(false);
+
+  const SectionLabel = ({ icon, label, danger }) => (
+    <div className="t-overline" style={{ color: danger ? 'var(--danger)' : 'var(--g500)', padding: '0 4px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+      <Icon name={icon} size={16} color={danger ? 'var(--danger)' : 'var(--g500)'} stroke={2} /> {label}
+    </div>
+  );
+
+  const ToggleRow = ({ icon, label, sub, on, onChange, locked }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: '#fff', borderBottom: '1px solid var(--g100)' }}>
+      <Icon name={icon} size={20} color={locked ? 'var(--g400)' : 'var(--g600)'} stroke={2} />
+      <div style={{ flex: 1 }}>
+        <div className="t-body-md" style={{ color: locked ? 'var(--g500)' : 'var(--g900)' }}>{label}</div>
+        {sub && <div className="t-body-sm" style={{ color: 'var(--g400)', marginTop: 2 }}>{sub}</div>}
+      </div>
+      {locked
+        ? <span className="t-caption" style={{ color: 'var(--g500)', padding: '4px 10px', background: 'var(--g100)', borderRadius: 6 }}>항상 켜짐</span>
+        : <Toggle on={on} onChange={onChange} />}
+    </div>
+  );
+
+  const ArrowRow = ({ icon, label, right, onClick }) => (
+    <button className="press" onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '16px 16px', background: '#fff', borderBottom: '1px solid var(--g100)' }}>
+      <Icon name={icon} size={20} color="var(--g600)" stroke={2} />
+      <span className="t-body-md" style={{ color: 'var(--g800)', flex: 1, textAlign: 'left' }}>{label}</span>
+      {right && <span className="t-body-sm" style={{ color: 'var(--g400)' }}>{right}</span>}
+      <Icon name="chevronRight" size={20} color="var(--g400)" />
+    </button>
+  );
+
+  const INTERVALS = [
+    { value: '30s', label: '30초' },
+    { value: '1m',  label: '1분' },
+    { value: '3m',  label: '3분 (절약)' },
+  ];
+
+  return (
+    <div style={{ height: '100%', background: 'var(--g50)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <MobileHeader title="가족 설정" onBack={() => nav('family', 'left')} />
+      <div className="scroll-y" style={{ flex: 1, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+        <div>
+          <SectionLabel icon="users" label="가족 구성원" />
+          <Card pad={0} style={{ overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid var(--g100)' }}>
+              <Avatar emoji="👵" size={44} ring="var(--brand)" />
+              <div style={{ flex: 1 }}>
+                <div className="t-body-md" style={{ color: 'var(--g900)', fontWeight: 600 }}>홍길순 <span style={{ color: 'var(--g500)', fontWeight: 400 }}>(어머니)</span></div>
+                <div className="t-body-sm" style={{ color: 'var(--g500)', marginTop: 2 }}>010-1234-5678 · 연결됨</div>
+              </div>
+              <Pill tone="on" dot>활성</Pill>
+            </div>
+            <button className="press" onClick={() => toast('가족 초대 링크를 복사했습니다.', 'success')}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '14px 16px', background: '#fff' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 999, background: 'var(--brand-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon name="plus" size={22} color="var(--brand)" stroke={2.4} />
+              </div>
+              <span className="t-body-md" style={{ color: 'var(--brand-dark)', flex: 1, textAlign: 'left' }}>가족 구성원 초대하기</span>
+              <Icon name="chevronRight" size={20} color="var(--g400)" />
+            </button>
+          </Card>
+        </div>
+
+        <div>
+          <SectionLabel icon="bell" label="알림 설정" />
+          <Card pad={0} style={{ overflow: 'hidden' }}>
+            <ToggleRow icon="sos" label="SOS 긴급 알림" sub="수신 중단 불가" locked />
+            <ToggleRow icon="mapPin" label="위치 갱신 알림" sub={locationAlert ? '이동 감지 시 즉시 알림' : '알림 꺼짐'}
+              on={locationAlert} onChange={v => { setLocationAlert(v); toast(v ? '위치 갱신 알림을 켰어요.' : '위치 갱신 알림을 껐어요.'); }} />
+            <ToggleRow icon="battery" label="배터리 부족 알림" sub={batteryAlert ? '20% 이하 시 알림' : '알림 꺼짐'}
+              on={batteryAlert} onChange={v => { setBatteryAlert(v); toast(v ? '배터리 부족 알림을 켰어요.' : '배터리 부족 알림을 껐어요.'); }} />
+          </Card>
+        </div>
+
+        <div>
+          <SectionLabel icon="clock" label="위치 갱신 주기" />
+          <Card pad={0} style={{ overflow: 'hidden' }}>
+            {INTERVALS.map(iv => (
+              <button key={iv.value} className="press" onClick={() => { setInterval(iv.value); toast(`위치 갱신 주기를 ${iv.label}로 변경했어요.`); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '14px 16px', background: interval === iv.value ? 'var(--brand-light)' : '#fff', borderBottom: '1px solid var(--g100)' }}>
+                <span className="t-body-md" style={{ flex: 1, textAlign: 'left', color: interval === iv.value ? 'var(--brand-dark)' : 'var(--g800)', fontWeight: interval === iv.value ? 700 : 500 }}>{iv.label}</span>
+                {interval === iv.value && <Icon name="check" size={20} color="var(--brand)" stroke={2.5} />}
+              </button>
+            ))}
+          </Card>
+        </div>
+
+        <div>
+          <SectionLabel icon="doc" label="앱 정보" />
+          <Card pad={0} style={{ overflow: 'hidden' }}>
+            <ArrowRow icon="doc" label="개인정보처리방침" onClick={() => toast('개인정보처리방침 페이지를 표시합니다.')} />
+            <ArrowRow icon="mapPin" label="위치기반서비스 이용약관" onClick={() => toast('위치기반서비스 이용약관을 표시합니다.')} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 16px', background: '#fff' }}>
+              <Icon name="shieldCheck" size={20} color="var(--g600)" stroke={2} />
+              <span className="t-body-md" style={{ flex: 1, color: 'var(--g800)' }}>앱 버전</span>
+              <span className="t-body-sm" style={{ color: 'var(--g400)' }}>v1.0.0</span>
+            </div>
+          </Card>
+        </div>
+
+        <div>
+          <SectionLabel icon="alert" label="위험 구역" danger />
+          <Card pad={18} style={{ border: '1.5px solid var(--danger-light)' }}>
+            <p className="t-body" style={{ color: 'var(--g700)', marginBottom: 14, lineHeight: 1.5 }}>그룹에서 나가면 부모님의 위치를 더 이상 확인할 수 없습니다.</p>
+            <Btn variant="dangerGhost" icon="logout" onClick={() => setLeaveOpen(true)}>가족 그룹에서 나가기</Btn>
+          </Card>
+        </div>
+      </div>
+
+      <BottomSheet open={leaveOpen} onClose={() => setLeaveOpen(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 999, background: 'var(--danger-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="alert" size={30} color="var(--danger)" stroke={2.2} />
+          </div>
+          <div className="t-h2" style={{ color: 'var(--g900)' }}>정말 그룹에서 나가시겠어요?</div>
+          <p className="t-body" style={{ color: 'var(--g600)', lineHeight: 1.5 }}>그룹에서 나가면 부모님의 실시간 위치와 이동 기록을 더 이상 볼 수 없습니다. 다시 참여하려면 초대 링크가 필요합니다.</p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <Btn variant="outline" onClick={() => setLeaveOpen(false)}>취소</Btn>
+            <Btn variant="danger" onClick={() => { setLeaveOpen(false); toast('가족 그룹에서 나갔습니다.', 'danger'); setTimeout(() => nav('login', 'left'), 600); }}>나가기</Btn>
           </div>
         </div>
       </BottomSheet>
@@ -2014,14 +2146,14 @@ const TWEAK_DEFAULTS = {
 const FLOWS = [
   { key: 'auth',   label: '로그인·온보딩', icon: 'user',  entry: 'login',  routes: ['login', 'onboarding', 'group'] },
   { key: 'parent', label: '부모님',        icon: 'sos',   entry: 'parent', routes: ['parent', 'parent-settings'] },
-  { key: 'family', label: '가족',          icon: 'mapPin', entry: 'family', routes: ['family', 'family-history', 'family-chat', 'family-geofence'] },
+  { key: 'family', label: '가족',          icon: 'mapPin', entry: 'family', routes: ['family', 'family-history', 'family-chat', 'family-geofence', 'family-settings'] },
   { key: 'admin',  label: '관리자',        icon: 'chart', entry: 'admin',  routes: ['admin'] },
 ];
 const ROUTE_NAMES = {
   login: 'SCR-001 로그인/회원가입', onboarding: 'SCR-002 온보딩', group: 'SCR-005 가족 그룹',
   parent: 'SCR-003 부모님 메인 (SOS)', 'parent-settings': 'SCR-004 부모님 설정',
-  family: 'SCR-006 실시간 지도', 'family-history': 'SCR-007 위치 이력', 'family-chat': 'SCR-008 가족 채팅', 'family-geofence': 'SCR-009 안전 구역',
-  admin: 'SCR-010~012 관리자 어드민',
+  family: 'SCR-006 실시간 지도', 'family-history': 'SCR-007 위치 이력', 'family-chat': 'SCR-008 가족 채팅', 'family-geofence': 'SCR-009 안전 구역', 'family-settings': 'SCR-010 가족 설정',
+  admin: 'SCR-011~013 관리자 어드민',
 };
 
 function FitStage({ w, h, children }) {
@@ -2079,6 +2211,7 @@ function App() {
       case 'family-history': return <FamilyHistory />;
       case 'family-chat': return <FamilyChat />;
       case 'family-geofence': return <FamilyGeofence />;
+      case 'family-settings': return <FamilySettings />;
       case 'admin': return <AdminApp />;
       default: return <ParentMain />;
     }
