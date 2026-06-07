@@ -9,6 +9,7 @@ export type Route =
   | "group"
   | "parent"
   | "parent-settings"
+  | "parent-chat"
   | "family"
   | "family-history"
   | "family-chat"

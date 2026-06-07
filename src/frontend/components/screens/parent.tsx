@@ -5,6 +5,7 @@ import { useApp } from "../AppContext";
 import { api, ApiClientError } from "../../lib/apiClient";
 import { Icon, IconName } from "../Icon";
 import {
+  Avatar,
   Banner,
   BottomSheet,
   Btn,
@@ -162,6 +163,48 @@ export function ParentMain() {
             </div>
           </div>
         </Card>
+
+        {/* 가족과 대화하기 (음성 채팅 진입) — 시니어용 큰 버튼 */}
+        <button
+          className="press"
+          onClick={() => nav("parent-chat", "right")}
+          style={{
+            marginTop: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            width: "100%",
+            padding: "16px 18px",
+            borderRadius: 16,
+            background: "var(--brand)",
+            border: "none",
+            boxShadow: "0 4px 14px rgba(46,125,50,.28)",
+          }}
+        >
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 999,
+              background: "rgba(255,255,255,.22)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="mic" size={26} color="#fff" stroke={2.2} />
+          </div>
+          <div style={{ flex: 1, textAlign: "left" }}>
+            <div style={{ color: "#fff", fontWeight: 800, fontSize: "calc(19px*var(--fz))" }}>
+              가족과 대화하기
+            </div>
+            <div style={{ color: "rgba(255,255,255,.85)", fontWeight: 500, fontSize: "calc(14px*var(--fz))", marginTop: 2 }}>
+              말하면 글자로 보내드려요
+            </div>
+          </div>
+          <Icon name="chevronRight" size={24} color="#fff" />
+        </button>
 
         {/* SOS button */}
         <div
@@ -562,6 +605,420 @@ export function ParentSettings() {
           </div>
         </div>
       </BottomSheet>
+    </div>
+  );
+}
+
+/* ════════════════════ SCR-014 부모님 음성 채팅 ════════════════════ */
+interface ParentChatMsg {
+  id: number | string;
+  who: "me" | "family";
+  name?: string;
+  emoji?: string;
+  text: string;
+  time: string;
+}
+
+// 브라우저 SpeechRecognition 최소 타입 (Web Speech API)
+interface SpeechRecognitionLike {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onstart: (() => void) | null;
+  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((e: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+}
+interface SpeechRecognitionEventLike {
+  resultIndex: number;
+  results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
+}
+
+export function ParentChat() {
+  const { state, nav, toast } = useApp();
+  const live = state.mode === "live" && !!state.groupId;
+  const groupId = state.groupId ?? "";
+  const myId = state.userId;
+
+  const [msgs, setMsgs] = useState<ParentChatMsg[]>([
+    { id: 1, who: "family", name: "큰딸", emoji: "🧑‍🦰", text: "엄마 점심 드셨어요?", time: "12:30" },
+    { id: 2, who: "family", name: "아들", emoji: "🧑", text: "오늘 날씨 추우니 따뜻하게 입으세요!", time: "12:32" },
+  ]);
+  const [draft, setDraft] = useState("");
+  const [interim, setInterim] = useState("");
+  const [listening, setListening] = useState(false);
+  const [supported, setSupported] = useState(true);
+  const [showKeyboard, setShowKeyboard] = useState(false);
+
+  const recRef = useRef<SpeechRecognitionLike | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // 새 메시지/음성 인식 시 자동 스크롤
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [msgs, draft, interim]);
+
+  // live 모드: 서버 메시지 로드
+  useEffect(() => {
+    if (!live) return;
+    let alive = true;
+    api
+      .chatMessages(groupId, { limit: 50 })
+      .then((page) => {
+        if (!alive) return;
+        setMsgs(
+          page.messages.map((m) => ({
+            id: m.messageId,
+            who: m.senderId === myId ? "me" : "family",
+            name: m.senderId === myId ? undefined : "가족",
+            emoji: "🧑",
+            text: m.content,
+            time: new Date(m.sentAt).toTimeString().slice(0, 5),
+          }))
+        );
+      })
+      .catch(() => {
+        /* 로드 실패 시 데모 메시지 유지 */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [live, groupId, myId]);
+
+  // 음성인식(Web Speech API) 초기화 — 클라이언트 전용
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const w = window as unknown as {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!SR) {
+      setSupported(false);
+      return;
+    }
+    const rec = new SR();
+    rec.lang = "ko-KR"; // 한국어 음성 인식
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.onstart = () => setListening(true);
+    rec.onresult = (e) => {
+      let finalText = "";
+      let interimText = "";
+      for (let i = e.resultIndex; i < e.results.length; i += 1) {
+        const r = e.results[i];
+        if (r.isFinal) finalText += r[0].transcript;
+        else interimText += r[0].transcript;
+      }
+      if (finalText) setDraft((d) => (d ? `${d} ` : "") + finalText.trim());
+      setInterim(interimText);
+    };
+    rec.onerror = (e) => {
+      setListening(false);
+      setInterim("");
+      if (e?.error === "not-allowed" || e?.error === "service-not-allowed") {
+        toast("마이크 사용을 허용해 주세요.", "danger");
+        setShowKeyboard(true);
+      } else if (e?.error === "no-speech") {
+        toast("소리가 들리지 않았어요. 다시 말씀해 주세요.");
+      }
+    };
+    rec.onend = () => {
+      setListening(false);
+      setInterim("");
+    };
+    recRef.current = rec;
+    return () => {
+      try {
+        rec.abort();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, [toast]);
+
+  const toggleListening = () => {
+    const rec = recRef.current;
+    if (!rec) {
+      setSupported(false);
+      setShowKeyboard(true);
+      toast("이 브라우저는 음성 입력을 지원하지 않아 글자판으로 입력해요.");
+      return;
+    }
+    if (listening) {
+      rec.stop();
+      return;
+    }
+    setInterim("");
+    try {
+      rec.start();
+    } catch {
+      /* 중복 start 무시 */
+    }
+  };
+
+  const send = async () => {
+    const t = draft.trim();
+    if (!t) return;
+    if (listening) recRef.current?.stop();
+    setDraft("");
+    setInterim("");
+    if (live) {
+      try {
+        const m = await api.sendChat(groupId, { content: t });
+        setMsgs((prev) => [
+          ...prev,
+          { id: m.messageId, who: "me", text: m.content, time: new Date(m.sentAt).toTimeString().slice(0, 5) },
+        ]);
+      } catch (e) {
+        toast(e instanceof ApiClientError ? e.message : "전송에 실패했어요.", "danger");
+        setDraft(t); // 실패 시 복원
+      }
+      return;
+    }
+    setMsgs((prev) => [
+      ...prev,
+      { id: Date.now(), who: "me", text: t, time: new Date().toTimeString().slice(0, 5) },
+    ]);
+    toast("가족에게 보냈어요.", "success");
+  };
+
+  const Bubble = ({ m }: { m: ParentChatMsg }) => {
+    const mine = m.who === "me";
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: mine ? "flex-end" : "flex-start",
+          marginBottom: 16,
+        }}
+      >
+        {!mine && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, paddingLeft: 4 }}>
+            <Avatar emoji={m.emoji || "🧑"} size={28} />
+            <span className="t-body-md" style={{ color: "var(--g600)", fontWeight: 700 }}>
+              {m.name}
+            </span>
+          </div>
+        )}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            gap: 6,
+            flexDirection: mine ? "row-reverse" : "row",
+            maxWidth: "84%",
+          }}
+        >
+          <div
+            style={{
+              padding: "12px 16px",
+              borderRadius: mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+              background: mine ? "var(--brand)" : "#fff",
+              color: mine ? "#fff" : "var(--g900)",
+              border: mine ? "none" : "1px solid var(--g200)",
+              fontSize: "calc(19px*var(--fz))", // 시니어 가독성: 큰 글씨
+              lineHeight: 1.5,
+              wordBreak: "break-word",
+            }}
+          >
+            {m.text}
+          </div>
+          <span className="t-body-sm" style={{ color: "var(--g400)", fontSize: "calc(12px*var(--fz))" }}>
+            {m.time}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const showDraftBar = !!(draft || interim);
+
+  return (
+    <div style={{ height: "100%", background: "var(--g50)", display: "flex", flexDirection: "column" }}>
+      <MobileHeader title="가족과 대화하기" sub="말하면 글자로 보내드려요" onBack={() => nav("parent", "left")} />
+
+      <div ref={scrollRef} className="scroll-y" style={{ flex: 1, padding: "16px 16px 8px" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+          <span
+            className="t-body-sm"
+            style={{
+              background: "rgba(0,0,0,.06)",
+              color: "var(--g600)",
+              padding: "5px 14px",
+              borderRadius: 999,
+              fontWeight: 600,
+            }}
+          >
+            오늘
+          </span>
+        </div>
+        {msgs.map((m) => (
+          <Bubble key={m.id} m={m} />
+        ))}
+      </div>
+
+      {/* 입력 영역 — 음성이 주 기능 */}
+      <div style={{ borderTop: "1px solid var(--g200)", background: "#fff", padding: "14px 16px 28px" }}>
+        {/* 인식/작성 중인 내용 미리보기 */}
+        {showDraftBar && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "12px 14px",
+              marginBottom: 12,
+              background: "var(--g50)",
+              border: "1.5px solid var(--g200)",
+              borderRadius: 14,
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ color: "var(--g900)", fontSize: "calc(18px*var(--fz))", fontWeight: 600 }}>
+                {draft}
+              </span>
+              {interim && (
+                <span style={{ color: "var(--g400)", fontSize: "calc(18px*var(--fz))" }}> {interim}</span>
+              )}
+            </div>
+            <button
+              className="press"
+              onClick={() => {
+                setDraft("");
+                setInterim("");
+              }}
+              aria-label="지우기"
+              style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+            >
+              <Icon name="close" size={22} color="var(--g500)" stroke={2.2} />
+            </button>
+          </div>
+        )}
+
+        {/* 글자판 입력 (보조 수단) */}
+        {showKeyboard && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value.slice(0, 500))}
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              placeholder="여기에 입력하세요"
+              style={{
+                flex: 1,
+                height: 52,
+                padding: "0 16px",
+                borderRadius: 12,
+                border: "1.5px solid var(--g300)",
+                outline: "none",
+                fontSize: "calc(18px*var(--fz))",
+                background: "#fff",
+              }}
+            />
+          </div>
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* 주 기능: 큰 음성 입력 버튼 */}
+          <button
+            className="press"
+            onClick={toggleListening}
+            style={{
+              flex: 1,
+              height: 72,
+              borderRadius: 18,
+              border: "none",
+              background: listening ? "var(--danger)" : "var(--brand)",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              boxShadow: listening
+                ? "0 4px 16px rgba(211,47,47,.35)"
+                : "0 4px 16px rgba(46,125,50,.3)",
+              position: "relative",
+            }}
+          >
+            <span style={{ position: "relative", width: 40, height: 40, flexShrink: 0 }}>
+              {listening && (
+                <span
+                  className="animate-ping-ring"
+                  style={{ position: "absolute", inset: 0, borderRadius: 999, background: "rgba(255,255,255,.5)" }}
+                />
+              )}
+              <span
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,.22)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="mic" size={26} color="#fff" stroke={2.2} />
+              </span>
+            </span>
+            <span style={{ fontSize: "calc(21px*var(--fz))", fontWeight: 800 }}>
+              {listening ? "듣고 있어요… (탭하면 멈춤)" : "눌러서 말하기"}
+            </span>
+          </button>
+
+          {/* 보내기 버튼 — 작성된 내용이 있을 때 강조 */}
+          <button
+            className="press"
+            onClick={send}
+            disabled={!draft.trim()}
+            aria-label="보내기"
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: 18,
+              flexShrink: 0,
+              background: draft.trim() ? "var(--brand-dark)" : "var(--g200)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "background .15s",
+            }}
+          >
+            <Icon name="send" size={28} color={draft.trim() ? "#fff" : "var(--g400)"} stroke={2.2} />
+          </button>
+        </div>
+
+        {/* 글자판 전환 */}
+        <button
+          className="press"
+          onClick={() => setShowKeyboard((s) => !s)}
+          style={{
+            marginTop: 12,
+            width: "100%",
+            height: 40,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            color: "var(--g600)",
+            fontWeight: 600,
+            fontSize: "calc(15px*var(--fz))",
+          }}
+        >
+          <Icon name="keyboard" size={20} color="var(--g600)" stroke={2} />
+          {showKeyboard ? "글자판 닫기" : "글자판으로 입력하기"}
+        </button>
+
+        {!supported && !showKeyboard && (
+          <p className="t-body-sm" style={{ color: "var(--g500)", textAlign: "center", marginTop: 8 }}>
+            이 브라우저는 음성 입력이 어려워요. 글자판으로 입력해 주세요.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

@@ -14,7 +14,7 @@ import { Icon, IconName } from "./Icon";
 import { BrandMark, Toast } from "./ui";
 import { ChromeWindow, FitStage, IOSDevice } from "./Frames";
 import { LoginScreen, OnboardingScreen, GroupScreen } from "./screens/auth";
-import { ParentMain, ParentSettings } from "./screens/parent";
+import { ParentMain, ParentSettings, ParentChat } from "./screens/parent";
 import { FamilyMap, FamilyHistory, FamilyChat, FamilyGeofence, FamilySettings } from "./screens/family";
 import { AdminApp } from "./screens/admin";
 
@@ -29,7 +29,7 @@ interface Flow {
 }
 const FLOWS: Flow[] = [
   { key: "auth", label: "로그인·온보딩", icon: "user", entry: "login", routes: ["login", "onboarding", "group"] },
-  { key: "parent", label: "부모님", icon: "sos", entry: "parent", routes: ["parent", "parent-settings"] },
+  { key: "parent", label: "부모님", icon: "sos", entry: "parent", routes: ["parent", "parent-settings", "parent-chat"] },
   { key: "family", label: "가족", icon: "mapPin", entry: "family", routes: ["family", "family-history", "family-chat", "family-geofence", "family-settings"] },
   { key: "admin", label: "관리자", icon: "chart", entry: "admin", routes: ["admin"] },
 ];
@@ -39,6 +39,7 @@ const ROUTE_NAMES: Record<Route, string> = {
   group: "SCR-005 가족 그룹",
   parent: "SCR-003 부모님 메인 (SOS)",
   "parent-settings": "SCR-004 부모님 설정",
+  "parent-chat": "SCR-014 부모님 음성 채팅",
   family: "SCR-006 실시간 지도",
   "family-history": "SCR-007 위치 이력",
   "family-chat": "SCR-008 가족 채팅",
@@ -85,6 +86,8 @@ export function PrototypeShell() {
         return <ParentMain />;
       case "parent-settings":
         return <ParentSettings />;
+      case "parent-chat":
+        return <ParentChat />;
       case "family":
         return <FamilyMap />;
       case "family-history":
