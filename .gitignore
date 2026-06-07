@@ -1,0 +1,27 @@
+# AP-Key (민감 정보 포함)
+.*[Kk]ey*
+# 단, template 파일은 commit 대상 (실제 키 없음)
+!.AP-key.template.md
+
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# 유틸리티 스크립트 (로컬 경로/키 하드코딩)
+upload_to_nlm.py
+
+# 로컬 도구 상태
+.local/
+
+.vercel

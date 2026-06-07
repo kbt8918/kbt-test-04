@@ -1,0 +1,2324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>안심맵 — 전체 화면 흐름 (프론트엔드 + 백엔드)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --brand:#2E7D32; --brand-dark:#1B5E20; --brand-mint:#4CAF50; --brand-light:#E8F5E9;
+    --g50:#FAFAFA; --g100:#F5F5F5; --g200:#EEEEEE; --g300:#E0E0E0;
+    --g400:#BDBDBD; --g500:#9E9E9E; --g600:#757575; --g700:#616161;
+    --g800:#424242; --g900:#212121;
+    --danger:#D32F2F; --danger-light:#FFEBEE; --info:#1976D2;
+    --sp-xs:4px; --sp-sm:8px; --sp-md:16px; --sp-lg:24px; --sp-xl:32px; --sp-2xl:48px; --sp-3xl:64px;
+    --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px;
+    --fz:1;
+    --font:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    --mono:'Monaco','Consolas',monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{ font-family:var(--font); color:var(--g900); -webkit-font-smoothing:antialiased; }
+
+  .t-display { font-size:calc(36px*var(--fz)); font-weight:700; line-height:1.2;  letter-spacing:-.02em; }
+  .t-h1      { font-size:calc(24px*var(--fz)); font-weight:700; line-height:1.33; letter-spacing:-.01em; }
+  .t-h2      { font-size:calc(20px*var(--fz)); font-weight:600; line-height:1.4; }
+  .t-h3      { font-size:calc(16px*var(--fz)); font-weight:600; line-height:1.5; }
+  .t-body    { font-size:calc(16px*var(--fz)); font-weight:400; line-height:1.5; }
+  .t-body-md { font-size:calc(16px*var(--fz)); font-weight:500; line-height:1.5; }
+  .t-body-sm { font-size:calc(13px*var(--fz)); font-weight:400; line-height:1.38; letter-spacing:.01em; }
+  .t-caption { font-size:calc(12px*var(--fz)); font-weight:600; line-height:1.33; letter-spacing:.02em; }
+  .t-overline{ font-size:calc(11px*var(--fz)); font-weight:700; line-height:1.27; letter-spacing:.08em; text-transform:uppercase; }
+  .mono      { font-family:var(--mono); }
+
+  .scroll-y{ overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+  .scroll-y::-webkit-scrollbar{ width:0; height:0; }
+  .noscroll::-webkit-scrollbar{ display:none; }
+
+  @keyframes sos-pulse{ 0%{ box-shadow:0 8px 24px rgba(211,47,47,.4), 0 0 0 0 rgba(211,47,47,.45); } 70%{ box-shadow:0 8px 24px rgba(211,47,47,.4), 0 0 0 28px rgba(211,47,47,0); } 100%{ box-shadow:0 8px 24px rgba(211,47,47,.4), 0 0 0 0 rgba(211,47,47,0); } }
+  .animate-sos-pulse{ animation:sos-pulse 2s infinite; }
+  @keyframes count-throb{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.14); } }
+  .animate-throb{ animation:count-throb 1s ease-in-out infinite; }
+  @keyframes slide-in-right{ from{ transform:translateX(22px); } to{ transform:translateX(0); } }
+  .slide-in{ animation:slide-in-right .3s cubic-bezier(.4,0,.2,1) both; }
+  @media (prefers-reduced-motion: reduce){ .slide-in{ animation:none; } }
+  @keyframes sheet-up{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
+  .sheet-up{ animation:sheet-up .32s cubic-bezier(.4,0,.2,1); }
+  @keyframes dim-in{ from{ opacity:0; } to{ opacity:1; } }
+  .dim-in{ animation:dim-in .2s ease; }
+  @keyframes marker-drop{ 0%{ transform:translateY(-14px); } 60%{ transform:translateY(3px); } 100%{ transform:translateY(0); } }
+  .marker-drop{ animation:marker-drop .5s cubic-bezier(.3,1.2,.5,1) both; }
+  @keyframes ping-ring{ 0%{ transform:scale(.6); opacity:.7; } 100%{ transform:scale(2.4); opacity:0; } }
+  .ping-ring{ animation:ping-ring 2s ease-out infinite; }
+  @keyframes shimmer{ 0%{ background-position:-200% 0; } 100%{ background-position:200% 0; } }
+  .skeleton{ background:linear-gradient(90deg,#eee 25%,#f5f5f5 37%,#eee 63%); background-size:200% 100%; animation:shimmer 1.4s infinite; }
+  @keyframes flash-red{ 0%,100%{ opacity:.15; } 50%{ opacity:.35; } }
+  .flash-red{ animation:flash-red 1s ease-in-out infinite; }
+  .press{ transition:transform .12s cubic-bezier(.4,0,.2,1), filter .15s, background-color .15s; }
+  .press:active{ transform:scale(.96); }
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; }
+  input,textarea,select{ font-family:inherit; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+  <script type="text/babel" data-presets="react">
+/* ============================================================================
+   안심맵 (AnsimMap) — 전체 화면 흐름 (Full Screen Flow) · 단일 파일
+   디자인 캔버스에 프론트엔드(모바일) + 백엔드(관리자) 전체 화면 + 모든 상태 보드를
+   동선 순서대로 펼쳐 보여줌. 각 보드는 독립적으로 동작하는 미니앱.
+   통합 순서: icons → ui → map → ios/chrome frames → design-canvas
+            → screens(auth/parent/family/admin, preset 지원) → overview
+   ========================================================================== */
+const { useState, useEffect, useRef, useContext, createContext, useCallback } = React;
+
+/* ════════════════════ icons.jsx ════════════════════ */
+const ICON_PATHS = {
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  back: '<path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>',
+  chevronRight: '<path d="M9 18l6-6-6-6"/>',
+  chevronDown: '<path d="M6 9l6 6 6-6"/>',
+  close: '<path d="M18 6 6 18"/><path d="M6 6l12 12"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  checkCircle: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  shieldCheck: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
+  mapPin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+  map: '<path d="M9 4 3 6v15l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v15"/><path d="M15 6v15"/>',
+  sos: '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 8v5"/><path d="M12 16h.01"/>',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  battery: '<rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/>',
+  bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  message: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2 21v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M22 21v-1a5 5 0 0 0-4-4.9"/>',
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3"/><path d="M21 14v.01"/><path d="M14 21h.01"/><path d="M17 17h.01"/><path d="M21 17v4"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+  power: '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  alert: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+  chart: '<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>',
+  route: '<circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><path d="M9 19h5a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8h1"/>',
+  layers: '<path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>',
+  heart: '<path d="M19 14c1.5-1.5 3-3.4 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.1 1.5 4 3 5.5l7 7 7-7z"/>',
+  edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+};
+
+function Icon({ name, size = 24, color = 'currentColor', stroke = 1.75, fill = 'none', style = {} }) {
+  const d = ICON_PATHS[name];
+  if (!d) return null;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color}
+      strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round"
+      style={{ flexShrink: 0, display: 'block', ...style }}
+      dangerouslySetInnerHTML={{ __html: d }} />
+  );
+}
+
+/* ════════════════════ ui.jsx ════════════════════ */
+const AppCtx = createContext(null);
+const useApp = () => useContext(AppCtx);
+const TOP_INSET = 56;
+const BOTTOM_INSET = 22;
+
+function Btn({ children, onClick, variant = 'primary', size = 'md', full = true, disabled = false, icon, style = {} }) {
+  const base = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    width: full ? '100%' : 'auto',
+    height: size === 'lg' ? 56 : size === 'sm' ? 40 : 48,
+    padding: size === 'sm' ? '0 16px' : '0 20px',
+    borderRadius: 'var(--r-sm)', fontWeight: 700,
+    fontSize: size === 'lg' ? 'calc(20px*var(--fz))' : 'calc(17px*var(--fz))',
+    letterSpacing: '-.01em', transition: 'all .18s cubic-bezier(.4,0,.2,1)',
+  };
+  const variants = {
+    primary: { background: disabled ? 'var(--g300)' : 'var(--brand)', color: disabled ? 'var(--g500)' : '#fff' },
+    danger:  { background: disabled ? 'var(--g300)' : 'var(--danger)', color: '#fff' },
+    secondary: { background: 'var(--brand-light)', color: 'var(--brand-dark)' },
+    outline: { background: '#fff', color: 'var(--g800)', border: '1.5px solid var(--g300)' },
+    ghost:   { background: 'transparent', color: 'var(--brand-dark)' },
+    dangerGhost: { background: '#fff', color: 'var(--danger)', border: '1.5px solid var(--danger)' },
+  };
+  return (
+    <button className="press" onClick={disabled ? undefined : onClick} disabled={disabled}
+      style={{ ...base, ...variants[variant], cursor: disabled ? 'not-allowed' : 'pointer', ...style }}>
+      {icon && <Icon name={icon} size={size === 'lg' ? 24 : 20} stroke={2} />}
+      {children}
+    </button>
+  );
+}
+
+function Field({ label, value, onChange, placeholder, type = 'text', maxLength, error, hint, mono, big, inputRef, onFocus }) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {label && <label className="t-h3" style={{ color: 'var(--g800)' }}>{label}</label>}
+      <input ref={inputRef} type={type} value={value} maxLength={maxLength}
+        placeholder={placeholder}
+        onChange={e => onChange && onChange(e.target.value)}
+        onFocus={() => { setFocus(true); onFocus && onFocus(); }} onBlur={() => setFocus(false)}
+        className={mono ? 'mono' : ''}
+        style={{
+          height: big ? 56 : 48, padding: '0 16px', width: '100%',
+          fontSize: big ? 'calc(22px*var(--fz))' : 'calc(17px*var(--fz))',
+          fontWeight: mono ? 700 : 500, letterSpacing: mono ? '.18em' : 0,
+          textAlign: mono ? 'center' : 'left',
+          borderRadius: 'var(--r-sm)', outline: 'none', color: 'var(--g900)',
+          background: error ? 'var(--danger-light)' : focus ? 'var(--brand-light)' : '#fff',
+          border: `1.5px solid ${error ? 'var(--danger)' : focus ? 'var(--brand)' : 'var(--g200)'}`,
+          transition: 'all .15s',
+        }} />
+      {error && <span className="t-body-sm" style={{ color: 'var(--danger)', fontWeight: 500 }}>{error}</span>}
+      {hint && !error && <span className="t-body-sm" style={{ color: 'var(--g500)' }}>{hint}</span>}
+    </div>
+  );
+}
+
+function Toggle({ on, onChange, size = 'md' }) {
+  const w = size === 'lg' ? 64 : 52, h = size === 'lg' ? 36 : 30, knob = h - 6;
+  return (
+    <button onClick={() => onChange(!on)} aria-pressed={on}
+      style={{
+        width: w, height: h, borderRadius: 999, padding: 3, flexShrink: 0,
+        background: on ? 'var(--brand)' : 'var(--g300)', transition: 'background .22s',
+        display: 'flex', alignItems: 'center', justifyContent: on ? 'flex-end' : 'flex-start',
+      }}>
+      <span style={{ width: knob, height: knob, borderRadius: 999, background: '#fff',
+        boxShadow: '0 2px 5px rgba(0,0,0,.2)', transition: 'all .22s' }} />
+    </button>
+  );
+}
+
+function CheckRow({ checked, onChange, children, required }) {
+  return (
+    <button onClick={() => onChange(!checked)} className="press"
+      style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', padding: '6px 0' }}>
+      <span style={{
+        width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: checked ? 'var(--brand)' : '#fff',
+        border: `2px solid ${checked ? 'var(--brand)' : 'var(--g300)'}`, transition: 'all .15s',
+      }}>
+        {checked && <Icon name="check" size={18} color="#fff" stroke={3} />}
+      </span>
+      <span className="t-body" style={{ color: 'var(--g800)', flex: 1 }}>
+        {required && <b style={{ color: 'var(--brand-dark)' }}>[필수] </b>}{children}
+      </span>
+    </button>
+  );
+}
+
+function RadioGroup({ options, value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 10 }}>
+      {options.map(o => {
+        const sel = value === o.value;
+        return (
+          <button key={o.value} onClick={() => onChange(o.value)} className="press"
+            style={{
+              flex: 1, height: 64, borderRadius: 'var(--r-md)', display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 3,
+              background: sel ? 'var(--brand-light)' : '#fff',
+              border: `2px solid ${sel ? 'var(--brand)' : 'var(--g200)'}`, transition: 'all .15s',
+            }}>
+            <span style={{ fontSize: 'calc(22px*var(--fz))' }}>{o.emoji}</span>
+            <span className="t-body-sm" style={{ fontWeight: 700, color: sel ? 'var(--brand-dark)' : 'var(--g600)' }}>{o.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Card({ children, style = {}, onClick, pad = 16 }) {
+  return (
+    <div onClick={onClick} className={onClick ? 'press' : ''}
+      style={{ background: '#fff', borderRadius: 'var(--r-lg)', padding: pad,
+        boxShadow: '0 2px 8px rgba(0,0,0,.05)', ...style }}>
+      {children}
+    </div>
+  );
+}
+
+function Banner({ tone = 'info', icon, children, action }) {
+  const tones = {
+    info:   { bg: 'var(--brand-light)', fg: 'var(--brand-dark)', bd: 'rgba(46,125,50,.25)' },
+    warn:   { bg: '#FFF4E5', fg: '#B25E00', bd: 'rgba(178,94,0,.3)' },
+    danger: { bg: 'var(--danger-light)', fg: 'var(--danger)', bd: 'rgba(211,47,47,.3)' },
+    grey:   { bg: 'var(--g100)', fg: 'var(--g700)', bd: 'var(--g200)' },
+  };
+  const t = tones[tone];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px',
+      background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 'var(--r-md)' }}>
+      {icon && <Icon name={icon} size={20} color={t.fg} stroke={2} style={{ flexShrink: 0 }} />}
+      <span className="t-body-sm" style={{ color: t.fg, fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{children}</span>
+      {action}
+    </div>
+  );
+}
+
+function Pill({ tone = 'grey', children, dot }) {
+  const tones = {
+    on:   { bg: 'var(--brand-light)', fg: 'var(--brand-dark)' },
+    off:  { bg: 'var(--g200)', fg: 'var(--g600)' },
+    danger: { bg: 'var(--danger-light)', fg: 'var(--danger)' },
+    info: { bg: '#E3F2FD', fg: 'var(--info)' },
+    grey: { bg: 'var(--g100)', fg: 'var(--g600)' },
+  };
+  const t = tones[tone];
+  return (
+    <span className="t-caption" style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '4px 10px', borderRadius: 999, background: t.bg, color: t.fg }}>
+      {dot && <span style={{ width: 7, height: 7, borderRadius: 999, background: t.fg }} />}
+      {children}
+    </span>
+  );
+}
+
+function Avatar({ emoji, size = 44, ring }) {
+  return (
+    <span style={{ width: size, height: size, borderRadius: 999, flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--brand-light)', fontSize: size * 0.52,
+      border: ring ? `2.5px solid ${ring}` : 'none' }}>{emoji}</span>
+  );
+}
+
+function MobileHeader({ title, brand, onBack, right, sub }) {
+  return (
+    <div style={{ paddingTop: TOP_INSET, paddingLeft: 8, paddingRight: 12, paddingBottom: 10,
+      display: 'flex', alignItems: 'center', gap: 4, background: '#fff',
+      borderBottom: '1px solid var(--g100)', flexShrink: 0, position: 'relative', zIndex: 5 }}>
+      {onBack && (
+        <button className="press" onClick={onBack} style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 999 }}>
+          <Icon name="back" size={24} color="var(--g800)" stroke={2.2} />
+        </button>
+      )}
+      {brand && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, paddingLeft: onBack ? 0 : 12 }}>
+          <BrandMark size={26} />
+          <span className="t-h2" style={{ color: 'var(--brand-dark)', fontWeight: 800 }}>안심맵</span>
+        </div>
+      )}
+      {title && !brand && (
+        <div style={{ paddingLeft: onBack ? 0 : 12, flex: 1 }}>
+          <div className="t-h2" style={{ color: 'var(--g900)' }}>{title}</div>
+          {sub && <div className="t-body-sm" style={{ color: 'var(--g500)' }}>{sub}</div>}
+        </div>
+      )}
+      <div style={{ flex: title && !brand ? 0 : 1 }} />
+      {right}
+    </div>
+  );
+}
+
+function IconBtn({ name, onClick, color = 'var(--g700)', badge }) {
+  return (
+    <button className="press" onClick={onClick} style={{ width: 44, height: 44, position: 'relative',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 999 }}>
+      <Icon name={name} size={24} color={color} stroke={2} />
+      {badge && <span style={{ position: 'absolute', top: 8, right: 8, width: 9, height: 9, borderRadius: 999, background: 'var(--danger)', border: '2px solid #fff' }} />}
+    </button>
+  );
+}
+
+function BottomNav({ active, onNav }) {
+  const items = [
+    { key: 'family', label: '지도', icon: 'mapPin' },
+    { key: 'family-history', label: '이동 기록', icon: 'route' },
+    { key: 'family-chat', label: '채팅', icon: 'message' },
+  ];
+  return (
+    <div style={{ display: 'flex', background: '#fff', borderTop: '1px solid var(--g200)',
+      paddingBottom: BOTTOM_INSET, flexShrink: 0, position: 'relative', zIndex: 5 }}>
+      {items.map(it => {
+        const on = active === it.key;
+        return (
+          <button key={it.key} className="press" onClick={() => onNav(it.key)}
+            style={{ flex: 1, height: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+            <Icon name={it.icon} size={24} color={on ? 'var(--brand)' : 'var(--g500)'} stroke={on ? 2.4 : 1.9} />
+            <span className="t-caption" style={{ color: on ? 'var(--brand)' : 'var(--g500)', fontWeight: on ? 700 : 600 }}>{it.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function BrandMark({ size = 40 }) {
+  return (
+    <span style={{ width: size, height: size, borderRadius: size * 0.28, flexShrink: 0,
+      background: 'linear-gradient(135deg,var(--brand-mint),var(--brand))',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: '0 3px 10px rgba(46,125,50,.3)' }}>
+      <Icon name="shieldCheck" size={size * 0.58} color="#fff" stroke={2.2} fill="none" />
+    </span>
+  );
+}
+
+function BottomSheet({ open, onClose, children }) {
+  if (!open) return null;
+  return (
+    <div className="dim-in" onClick={onClose}
+      style={{ position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(0,0,0,.45)',
+        display: 'flex', alignItems: 'flex-end' }}>
+      <div className="sheet-up" onClick={e => e.stopPropagation()}
+        style={{ width: '100%', background: '#fff', borderRadius: '24px 24px 0 0',
+          padding: '12px 20px calc(28px + 8px)', maxHeight: '80%', overflow: 'auto' }}>
+        <div style={{ width: 40, height: 5, borderRadius: 999, background: 'var(--g300)', margin: '0 auto 16px' }} />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Toast({ toast }) {
+  if (!toast) return null;
+  const tones = { default: 'var(--g900)', danger: 'var(--danger)', success: 'var(--brand-dark)' };
+  return (
+    <div style={{ position: 'absolute', left: 16, right: 16, bottom: 90, zIndex: 400, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+      <div className="dim-in" style={{ background: tones[toast.tone] || tones.default, color: '#fff',
+        padding: '12px 18px', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,.25)',
+        maxWidth: '100%', textAlign: 'center', fontWeight: 600, fontSize: 'calc(14px*var(--fz))', lineHeight: 1.4 }}>
+        {toast.msg}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════ map.jsx ════════════════════ */
+function FakeMap({ markers = [], path = null, circle = null, dim = false, grey = false, showControls = true, children, style = {} }) {
+  const land = grey ? '#EDEDED' : '#F4F2EC';
+  const park = grey ? '#DDDDDD' : '#CBE3C4';
+  const water = grey ? '#D6D6D6' : '#A9D2EE';
+  const roadMajor = grey ? '#FFFFFF' : '#FBEFC9';
+  const roadMinor = '#FFFFFF';
+  const casing = grey ? '#DADADA' : '#E7E2D4';
+  const block = grey ? '#F4F4F4' : '#FAF8F2';
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: land, ...style }}>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" style={{ display: 'block' }}>
+        <path d="M-2 8 Q 14 2 26 10 Q 30 22 18 28 Q 4 30 -2 22 Z" fill={park} opacity="0.9" />
+        <rect x="62" y="58" width="34" height="26" rx="3" fill={park} opacity="0.85" />
+        <circle cx="82" cy="20" r="11" fill={park} opacity="0.8" />
+        <path d="M-5 70 Q 25 60 45 74 Q 65 88 105 78 L 105 100 L -5 100 Z" fill={water} opacity="0.92" />
+        <path d="M-5 70 Q 25 60 45 74 Q 65 88 105 78" fill="none" stroke={grey ? '#C7C7C7' : '#8FC0E6'} strokeWidth="0.6" />
+        <rect x="30" y="14" width="22" height="20" rx="2" fill={block} />
+        <rect x="56" y="12" width="18" height="16" rx="2" fill={block} />
+        <rect x="8" y="40" width="20" height="20" rx="2" fill={block} />
+        <rect x="34" y="40" width="26" height="18" rx="2" fill={block} />
+        <rect x="64" y="36" width="22" height="16" rx="2" fill={block} />
+        <g stroke={casing} fill="none" strokeLinecap="round">
+          <path d="M-5 36 H 105" strokeWidth="7.5" />
+          <path d="M30 -5 V 105" strokeWidth="7.5" />
+          <path d="M-5 8 Q 40 30 105 20" strokeWidth="6" />
+        </g>
+        <g fill="none" strokeLinecap="round">
+          <path d="M-5 36 H 105" stroke={roadMajor} strokeWidth="6" />
+          <path d="M30 -5 V 105" stroke={roadMajor} strokeWidth="6" />
+          <path d="M-5 8 Q 40 30 105 20" stroke={roadMinor} strokeWidth="4.5" />
+        </g>
+        <g stroke={roadMinor} fill="none" strokeWidth="2.6" strokeLinecap="round">
+          <path d="M10 -5 V 36" /><path d="M58 0 V 105" /><path d="M82 -5 V 105" />
+          <path d="M-5 58 H 60" /><path d="M30 78 H 105" /><path d="M0 20 H 30" />
+        </g>
+        <g stroke={roadMinor} fill="none" strokeWidth="1.6" strokeLinecap="round" opacity="0.9">
+          <path d="M44 -5 V 36" /><path d="M70 36 V 78" /><path d="M30 50 H 82" />
+        </g>
+        {circle && (
+          <g className={circle.tone === 'danger' ? 'flash-red' : ''}>
+            <circle cx={circle.x} cy={circle.y} r={circle.r}
+              fill={circle.tone === 'danger' ? 'rgba(211,47,47,0.15)' : 'rgba(46,125,50,0.15)'}
+              stroke={circle.tone === 'danger' ? '#D32F2F' : '#2E7D32'} strokeWidth="0.7" strokeDasharray="2 1.5" />
+          </g>
+        )}
+        {path && path.length > 1 && (
+          <g>
+            <polyline points={path.map(p => `${p.x},${p.y}`).join(' ')}
+              fill="none" stroke="#1976D2" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" opacity="0.9" />
+            <polyline points={path.map(p => `${p.x},${p.y}`).join(' ')}
+              fill="none" stroke="#fff" strokeWidth="0.6" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="0.5 2.5" />
+          </g>
+        )}
+      </svg>
+      {dim && <div style={{ position: 'absolute', inset: 0, background: 'rgba(120,124,120,0.32)' }} />}
+      {markers.map((m, i) => (
+        <div key={i} style={{ position: 'absolute', left: `${m.x}%`, top: `${m.y}%`, transform: 'translate(-50%,-100%)', zIndex: m.active ? 30 : 20 }}>
+          <div className={m.active ? 'marker-drop' : ''} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {m.label && (
+              <div style={{ marginBottom: 4, background: '#fff', borderRadius: 8, padding: '3px 9px',
+                boxShadow: '0 2px 6px rgba(0,0,0,.18)', whiteSpace: 'nowrap',
+                fontSize: 'calc(12px*var(--fz))', fontWeight: 700, color: m.stale ? 'var(--g500)' : 'var(--g900)' }}>
+                {m.label}
+              </div>
+            )}
+            <div style={{ position: 'relative' }}>
+              {m.active && !m.stale && (
+                <span className="ping-ring" style={{ position: 'absolute', inset: 0, margin: 'auto', width: 44, height: 44,
+                  borderRadius: 999, background: m.color || 'var(--brand)', left: '50%', top: 20, transform: 'translateX(-50%)' }} />
+              )}
+              <div style={{ width: 44, height: 44, borderRadius: '50% 50% 50% 0', transform: 'rotate(45deg)',
+                background: m.stale ? 'var(--g400)' : (m.color || 'var(--brand)'),
+                boxShadow: '0 4px 10px rgba(0,0,0,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '2.5px solid #fff', position: 'relative' }}>
+                <span style={{ transform: 'rotate(-45deg)', fontSize: 22, filter: m.stale ? 'grayscale(1)' : 'none' }}>{m.emoji}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+      {children}
+      {showControls && (
+        <div style={{ position: 'absolute', right: 12, bottom: 16, display: 'flex', flexDirection: 'column',
+          borderRadius: 10, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.2)', zIndex: 40 }}>
+          {['plus', 'minus'].map((k, i) => (
+            <div key={k} style={{ width: 38, height: 38, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderBottom: i === 0 ? '1px solid var(--g200)' : 'none', color: 'var(--g700)', fontSize: 22, fontWeight: 600 }}>
+              {i === 0 ? '+' : '−'}
+            </div>
+          ))}
+        </div>
+      )}
+      {showControls && (
+        <div style={{ position: 'absolute', left: 10, bottom: 12, background: 'rgba(255,255,255,.85)', borderRadius: 6,
+          padding: '3px 8px', fontSize: 10, color: 'var(--g500)', fontWeight: 600, zIndex: 40 }}>지도</div>
+      )}
+    </div>
+  );
+}
+
+function MapDot({ x, y, color, label }) {
+  return (
+    <div style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', zIndex: 25,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+      <span style={{ width: 18, height: 18, borderRadius: 999, background: color, border: '3px solid #fff', boxShadow: '0 2px 5px rgba(0,0,0,.3)' }} />
+      {label && <span style={{ background: '#fff', borderRadius: 6, padding: '1px 6px', fontSize: 10, fontWeight: 700, color: 'var(--g800)', boxShadow: '0 1px 4px rgba(0,0,0,.15)' }}>{label}</span>}
+    </div>
+  );
+}
+
+/* ════════════════════ ios-frame.jsx ════════════════════ */
+function IOSStatusBar({ dark = false, time = '9:41' }) {
+  const c = dark ? '#fff' : '#000';
+  return (
+    <div style={{ display: 'flex', gap: 154, alignItems: 'center', justifyContent: 'center',
+      padding: '21px 24px 19px', boxSizing: 'border-box', position: 'relative', zIndex: 20, width: '100%' }}>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 1.5 }}>
+        <span style={{ fontFamily: '-apple-system, "SF Pro", system-ui', fontWeight: 590, fontSize: 17, lineHeight: '22px', color: c }}>{time}</span>
+      </div>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: 1, paddingRight: 1 }}>
+        <svg width="19" height="12" viewBox="0 0 19 12">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={c}/>
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill={c}/>
+          <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
+        </svg>
+        <svg width="27" height="13" viewBox="0 0 27 13">
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function IOSDevice({ children, width = 402, height = 874, dark = false }) {
+  return (
+    <div style={{ width, height, borderRadius: 48, overflow: 'hidden', position: 'relative',
+      background: dark ? '#000' : '#F2F2F7', boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      fontFamily: '-apple-system, system-ui, sans-serif', WebkitFontSmoothing: 'antialiased' }}>
+      <div style={{ position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50 }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+        <IOSStatusBar dark={dark} />
+      </div>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, overflow: 'hidden', fontFamily: 'var(--font)' }}>{children}</div>
+      </div>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60, height: 34,
+        display: 'flex', justifyContent: 'center', alignItems: 'flex-end', paddingBottom: 8, pointerEvents: 'none' }}>
+        <div style={{ width: 139, height: 5, borderRadius: 100, background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)' }} />
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════ browser-window.jsx ════════════════════ */
+const CHROME_C = { barBg: '#202124', tabBg: '#35363a', text: '#e8eaed', dim: '#9aa0a6', urlBg: '#282a2d' };
+
+function ChromeTrafficLights() {
+  return (
+    <div style={{ display: 'flex', gap: 8, padding: '0 14px' }}>
+      <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff5f57' }} />
+      <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#febc2e' }} />
+      <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#28c840' }} />
+    </div>
+  );
+}
+
+function ChromeTab({ title = 'New Tab', active = false }) {
+  const curve = (flip) => (
+    <svg width="8" height="10" viewBox="0 0 8 10"
+      style={{ position: 'absolute', bottom: 0, [flip ? 'right' : 'left']: -8, transform: flip ? 'scaleX(-1)' : 'none' }}>
+      <path d="M0 10C2 9 6 8 8 0V10H0Z" fill={CHROME_C.tabBg}/>
+    </svg>
+  );
+  return (
+    <div style={{ position: 'relative', height: 34, alignSelf: 'flex-end', padding: '0 12px',
+      display: 'flex', alignItems: 'center', gap: 8, background: active ? CHROME_C.tabBg : 'transparent',
+      borderRadius: '8px 8px 0 0', minWidth: 120, maxWidth: 220, fontFamily: 'system-ui, sans-serif', fontSize: 12,
+      color: active ? CHROME_C.text : CHROME_C.dim }}>
+      {active && curve(false)}
+      {active && curve(true)}
+      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#5f6368', flexShrink: 0 }} />
+      <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
+    </div>
+  );
+}
+
+function ChromeTabBar({ tabs = [{ title: 'New Tab' }], activeIndex = 0 }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', height: 44, background: CHROME_C.barBg, paddingRight: 8 }}>
+      <ChromeTrafficLights />
+      <div style={{ display: 'flex', alignItems: 'flex-end', height: '100%', paddingLeft: 4, flex: 1 }}>
+        {tabs.map((t, i) => <ChromeTab key={i} title={t.title} active={i === activeIndex} />)}
+      </div>
+    </div>
+  );
+}
+
+function ChromeToolbar({ url = 'example.com' }) {
+  const iconDot = (
+    <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 16, height: 16, borderRadius: '50%', background: CHROME_C.dim, opacity: 0.4 }} />
+    </div>
+  );
+  return (
+    <div style={{ height: 40, background: CHROME_C.tabBg, display: 'flex', alignItems: 'center', gap: 4, padding: '0 8px' }}>
+      {iconDot}
+      <div style={{ flex: 1, height: 30, borderRadius: 15, background: CHROME_C.urlBg,
+        display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', margin: '0 6px' }}>
+        <div style={{ width: 12, height: 12, borderRadius: '50%', background: CHROME_C.dim, opacity: 0.4 }} />
+        <span style={{ flex: 1, color: CHROME_C.text, fontSize: 13, fontFamily: 'system-ui, sans-serif' }}>{url}</span>
+      </div>
+      {iconDot}
+    </div>
+  );
+}
+
+function ChromeWindow({ tabs = [{ title: 'New Tab' }], activeIndex = 0, url = 'example.com', width = 900, height = 600, children }) {
+  return (
+    <div style={{ width, height, borderRadius: 10, overflow: 'hidden',
+      boxShadow: '0 24px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.1)',
+      display: 'flex', flexDirection: 'column', background: CHROME_C.tabBg }}>
+      <ChromeTabBar tabs={tabs} activeIndex={activeIndex} />
+      <ChromeToolbar url={url} />
+      <div style={{ flex: 1, background: '#fff', overflow: 'hidden', fontFamily: 'var(--font)' }}>{children}</div>
+    </div>
+  );
+}
+
+/* ════════════════════ design-canvas.jsx (Figma-ish pan/zoom canvas) ════════════════════ */
+const DC = {
+  bg: '#f0eee9', grid: 'rgba(0,0,0,0.06)', label: 'rgba(60,50,40,0.7)',
+  title: 'rgba(40,30,20,0.85)', subtitle: 'rgba(60,50,40,0.6)',
+  postitBg: '#fef4a8', postitText: '#5a4a2a',
+  font: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+};
+
+if (typeof document !== 'undefined' && !document.getElementById('dc-styles')) {
+  const s = document.createElement('style');
+  s.id = 'dc-styles';
+  s.textContent = [
+    '.dc-editable{cursor:text;outline:none;white-space:nowrap;border-radius:3px;padding:0 2px;margin:0 -2px}',
+    '.dc-editable:focus{background:#fff;box-shadow:0 0 0 1.5px #c96442}',
+    '[data-dc-slot]{transition:transform .18s cubic-bezier(.2,.7,.3,1)}',
+    '[data-dc-slot].dc-dragging{transition:none;z-index:10;pointer-events:none}',
+    '[data-dc-slot].dc-dragging .dc-card{box-shadow:0 12px 40px rgba(0,0,0,.25),0 0 0 2px #c96442;transform:scale(1.02)}',
+    '.dc-card{isolation:isolate;transition:box-shadow .15s,transform .15s}',
+    '.dc-card *{scrollbar-width:none}',
+    '.dc-card *::-webkit-scrollbar{display:none}',
+    '.dc-header{position:absolute;bottom:100%;left:-4px;margin-bottom:calc(4px * var(--dc-inv-zoom,1));z-index:2;',
+    '  display:flex;align-items:center;container-type:inline-size}',
+    '.dc-labelrow{display:flex;align-items:center;gap:4px;height:24px;flex:1 1 auto;min-width:0}',
+    '.dc-grip{flex:0 0 auto;cursor:grab;display:flex;align-items:center;padding:5px 4px;border-radius:4px;transition:background .12s,opacity .12s}',
+    '.dc-grip:hover{background:rgba(0,0,0,.08)}',
+    '.dc-grip:active{cursor:grabbing}',
+    '.dc-labeltext{flex:1 1 auto;min-width:0;cursor:pointer;border-radius:4px;padding:3px 6px;',
+    '  display:flex;align-items:center;transition:background .12s;overflow:hidden}',
+    '@container (max-width: 110px){',
+    '  .dc-labeltext{display:none}',
+    '  .dc-grip{opacity:0}',
+    '  [data-dc-slot]:hover .dc-grip{opacity:1}',
+    '}',
+    '.dc-labeltext:hover{background:rgba(0,0,0,.05)}',
+    '.dc-labeltext .dc-editable{overflow:hidden;text-overflow:ellipsis;max-width:100%}',
+    '.dc-labeltext .dc-editable:focus{overflow:visible;text-overflow:clip}',
+    '.dc-btns{flex:0 0 auto;margin-left:auto;display:flex;gap:2px;opacity:0;transition:opacity .12s}',
+    '[data-dc-slot]:hover .dc-btns,.dc-btns:has(.dc-menu){opacity:1}',
+    '.dc-expand,.dc-kebab{width:22px;height:22px;border-radius:5px;border:none;cursor:pointer;padding:0;',
+    '  background:transparent;color:rgba(60,50,40,.7);display:flex;align-items:center;justify-content:center;',
+    '  font:inherit;transition:background .12s,color .12s}',
+    '.dc-expand:hover,.dc-kebab:hover{background:rgba(0,0,0,.06);color:#2a251f}',
+    '[data-dc-slot]:has(.dc-menu){z-index:10}',
+    '.dc-menu{position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border-radius:8px;',
+    '  box-shadow:0 8px 28px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.05);padding:4px;min-width:160px;z-index:10}',
+    '.dc-menu button{display:block;width:100%;padding:7px 10px;border:0;background:transparent;',
+    '  border-radius:5px;font-family:inherit;font-size:13px;font-weight:500;line-height:1.2;',
+    '  color:#29261b;cursor:pointer;text-align:left;transition:background .12s;white-space:nowrap}',
+    '.dc-menu button:hover{background:rgba(0,0,0,.05)}',
+    '.dc-menu hr{border:0;border-top:1px solid rgba(0,0,0,.08);margin:4px 2px}',
+    '.dc-menu .dc-danger{color:#c96442}',
+    '.dc-menu .dc-danger:hover{background:rgba(201,100,66,.1)}',
+    '.dc-header{width:calc((100% + 4px) / var(--dc-inv-zoom,1));',
+    '  transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom left}',
+    '.dc-sectionhead{zoom:var(--dc-inv-zoom,1)}',
+  ].join('\n');
+  document.head.appendChild(s);
+}
+
+const DCCtx = React.createContext(null);
+
+function dcFlatten(children) {
+  const out = [];
+  React.Children.forEach(children, (c) => {
+    if (c && c.type === React.Fragment) out.push(...dcFlatten(c.props.children));
+    else out.push(c);
+  });
+  return out;
+}
+
+const DC_STATE_FILE = '.design-canvas.state.json';
+
+function DesignCanvas({ children, minScale, maxScale, style }) {
+  const [state, setState] = React.useState({ sections: {}, focus: null });
+  const [ready, setReady] = React.useState(false);
+  const didRead = React.useRef(false);
+  const skipNextWrite = React.useRef(false);
+
+  React.useEffect(() => {
+    let off = false;
+    fetch('./' + DC_STATE_FILE)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((saved) => {
+        if (off || !saved || !saved.sections) return;
+        skipNextWrite.current = true;
+        setState((s) => ({ ...s, sections: saved.sections }));
+      })
+      .catch(() => {})
+      .finally(() => { didRead.current = true; if (!off) setReady(true); });
+    const t = setTimeout(() => { if (!off) setReady(true); }, 150);
+    return () => { off = true; clearTimeout(t); };
+  }, []);
+
+  React.useEffect(() => {
+    if (!didRead.current) return;
+    if (skipNextWrite.current) { skipNextWrite.current = false; return; }
+    const t = setTimeout(() => {
+      if (window.omelette) window.omelette.writeFile(DC_STATE_FILE, JSON.stringify({ sections: state.sections })).catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [state.sections]);
+
+  const registry = {};
+  const sectionMeta = {};
+  const sectionOrder = [];
+  dcFlatten(children).forEach((sec) => {
+    if (!sec || sec.type !== DCSection) return;
+    const sid = sec.props.id != null ? sec.props.id : sec.props.title;
+    if (!sid) return;
+    sectionOrder.push(sid);
+    const persisted = state.sections[sid] || {};
+    const abs = [];
+    dcFlatten(sec.props.children).forEach((ab) => {
+      if (!ab || ab.type !== DCArtboard) return;
+      const aid = ab.props.id != null ? ab.props.id : ab.props.label;
+      if (aid) abs.push([aid, ab]);
+    });
+    const srcKey = abs.map(([k]) => k).join('\x1f');
+    const hidden = persisted.srcKey === srcKey ? (persisted.hidden || []) : [];
+    const srcIds = [];
+    abs.forEach(([aid, ab]) => {
+      if (hidden.includes(aid)) return;
+      registry[`${sid}/${aid}`] = { sectionId: sid, artboard: ab };
+      srcIds.push(aid);
+    });
+    const kept = (persisted.order || []).filter((k) => srcIds.includes(k));
+    sectionMeta[sid] = {
+      title: persisted.title != null ? persisted.title : sec.props.title,
+      subtitle: sec.props.subtitle,
+      slotIds: [...kept, ...srcIds.filter((k) => !kept.includes(k))],
+    };
+  });
+
+  const api = React.useMemo(() => ({
+    state,
+    section: (id) => state.sections[id] || {},
+    patchSection: (id, p) => setState((s) => ({
+      ...s,
+      sections: { ...s.sections, [id]: { ...s.sections[id], ...(typeof p === 'function' ? p(s.sections[id] || {}) : p) } },
+    })),
+    setFocus: (slotId) => setState((s) => ({ ...s, focus: slotId })),
+  }), [state]);
+
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') api.setFocus(null); };
+    const onPd = (e) => {
+      const ae = document.activeElement;
+      if (ae && ae.isContentEditable && !ae.contains(e.target)) ae.blur();
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPd, true);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPd, true);
+    };
+  }, [api]);
+
+  return (
+    <DCCtx.Provider value={api}>
+      <DCViewport minScale={minScale} maxScale={maxScale} style={style}>{ready && children}</DCViewport>
+      {state.focus && registry[state.focus] && (
+        <DCFocusOverlay entry={registry[state.focus]} sectionMeta={sectionMeta} sectionOrder={sectionOrder} />
+      )}
+    </DCCtx.Provider>
+  );
+}
+
+function DCViewport({ children, minScale = 0.1, maxScale = 8, style = {} }) {
+  const vpRef = React.useRef(null);
+  const worldRef = React.useRef(null);
+  const tf = React.useRef({ x: 0, y: 0, scale: 1 });
+  const tfKey = 'dc-viewport:' + location.pathname;
+  const saveT = React.useRef(0);
+
+  const lastPostedScale = React.useRef();
+  const apply = React.useCallback(() => {
+    const { x, y, scale } = tf.current;
+    const el = worldRef.current;
+    if (!el) return;
+    el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+    el.style.setProperty('--dc-inv-zoom', String(1 / scale));
+    if (lastPostedScale.current !== scale) {
+      lastPostedScale.current = scale;
+      window.parent.postMessage({ type: '__dc_zoom', scale }, '*');
+    }
+    clearTimeout(saveT.current);
+    saveT.current = setTimeout(() => {
+      try { localStorage.setItem(tfKey, JSON.stringify(tf.current)); } catch (e) {}
+    }, 200);
+  }, [tfKey]);
+
+  React.useLayoutEffect(() => {
+    const flush = () => {
+      clearTimeout(saveT.current);
+      try { localStorage.setItem(tfKey, JSON.stringify(tf.current)); } catch (e) {}
+    };
+    try {
+      const s = JSON.parse(localStorage.getItem(tfKey) || 'null');
+      if (s && Number.isFinite(s.x) && Number.isFinite(s.y) && Number.isFinite(s.scale)) {
+        tf.current = { x: s.x, y: s.y, scale: Math.min(maxScale, Math.max(minScale, s.scale)) };
+        apply();
+      }
+    } catch (e) {}
+    window.addEventListener('pagehide', flush);
+    return () => { window.removeEventListener('pagehide', flush); flush(); };
+  }, []);
+
+  React.useEffect(() => {
+    const vp = vpRef.current;
+    if (!vp) return;
+    const zoomAt = (cx, cy, factor) => {
+      const r = vp.getBoundingClientRect();
+      const px = cx - r.left, py = cy - r.top;
+      const t = tf.current;
+      const next = Math.min(maxScale, Math.max(minScale, t.scale * factor));
+      const k = next / t.scale;
+      let marker = null, markerY0 = 0;
+      if (k !== 1) {
+        const hit = document.elementFromPoint(cx, cy);
+        marker = hit && hit.closest ? hit.closest('[data-dc-slot],[data-dc-section]') : null;
+        if (marker) markerY0 = marker.getBoundingClientRect().top;
+      }
+      t.x = px - (px - t.x) * k;
+      t.y = py - (py - t.y) * k;
+      t.scale = next;
+      apply();
+      if (marker) {
+        const drift = marker.getBoundingClientRect().top - (cy + (markerY0 - cy) * k);
+        if (Math.abs(drift) > 0.1) { t.y -= drift; apply(); }
+      }
+    };
+    const isMouseWheel = (e) =>
+      e.deltaMode !== 0 || (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 40);
+    const onWheel = (e) => {
+      e.preventDefault();
+      if (isGesturing) return;
+      if ((e.ctrlKey || e.metaKey) && !isMouseWheel(e)) {
+        zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01));
+      } else if (isMouseWheel(e)) {
+        zoomAt(e.clientX, e.clientY, Math.exp(-Math.sign(e.deltaY) * 0.18));
+      } else {
+        tf.current.x -= e.deltaX;
+        tf.current.y -= e.deltaY;
+        apply();
+      }
+    };
+    let gsBase = 1;
+    let isGesturing = false;
+    const onGestureStart = (e) => { e.preventDefault(); isGesturing = true; gsBase = tf.current.scale; };
+    const onGestureChange = (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, (gsBase * e.scale) / tf.current.scale); };
+    const onGestureEnd = (e) => { e.preventDefault(); isGesturing = false; };
+    let drag = null;
+    const onPointerDown = (e) => {
+      const onBg = !e.target.closest('[data-dc-slot], .dc-editable');
+      if (!(e.button === 1 || (e.button === 0 && onBg))) return;
+      e.preventDefault();
+      vp.setPointerCapture(e.pointerId);
+      drag = { id: e.pointerId, lx: e.clientX, ly: e.clientY };
+      vp.style.cursor = 'grabbing';
+    };
+    const onPointerMove = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      tf.current.x += e.clientX - drag.lx;
+      tf.current.y += e.clientY - drag.ly;
+      drag.lx = e.clientX; drag.ly = e.clientY;
+      apply();
+    };
+    const onPointerUp = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      vp.releasePointerCapture(e.pointerId);
+      drag = null;
+      vp.style.cursor = '';
+    };
+    const onHostMsg = (e) => {
+      const d = e.data;
+      if (d && d.type === '__dc_set_zoom' && typeof d.scale === 'number') {
+        const r = vp.getBoundingClientRect();
+        zoomAt(r.left + r.width / 2, r.top + r.height / 2, d.scale / tf.current.scale);
+      } else if (d && d.type === '__dc_probe') {
+        window.parent.postMessage({ type: '__dc_present' }, '*');
+        lastPostedScale.current = undefined;
+        apply();
+      }
+    };
+    window.addEventListener('message', onHostMsg);
+    window.parent.postMessage({ type: '__dc_present' }, '*');
+    lastPostedScale.current = undefined;
+    apply();
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    vp.addEventListener('gesturestart', onGestureStart, { passive: false });
+    vp.addEventListener('gesturechange', onGestureChange, { passive: false });
+    vp.addEventListener('gestureend', onGestureEnd, { passive: false });
+    vp.addEventListener('pointerdown', onPointerDown);
+    vp.addEventListener('pointermove', onPointerMove);
+    vp.addEventListener('pointerup', onPointerUp);
+    vp.addEventListener('pointercancel', onPointerUp);
+    return () => {
+      window.removeEventListener('message', onHostMsg);
+      vp.removeEventListener('wheel', onWheel);
+      vp.removeEventListener('gesturestart', onGestureStart);
+      vp.removeEventListener('gesturechange', onGestureChange);
+      vp.removeEventListener('gestureend', onGestureEnd);
+      vp.removeEventListener('pointerdown', onPointerDown);
+      vp.removeEventListener('pointermove', onPointerMove);
+      vp.removeEventListener('pointerup', onPointerUp);
+      vp.removeEventListener('pointercancel', onPointerUp);
+    };
+  }, [apply, minScale, maxScale]);
+
+  const gridSvg = `url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M120 0H0v120' fill='none' stroke='${encodeURIComponent(DC.grid)}' stroke-width='1'/%3E%3C/svg%3E")`;
+  return (
+    <div ref={vpRef} className="design-canvas"
+      style={{ height: '100vh', width: '100vw', background: DC.bg, overflow: 'hidden',
+        overscrollBehavior: 'none', touchAction: 'none', position: 'relative',
+        fontFamily: DC.font, boxSizing: 'border-box', ...style }}>
+      <div ref={worldRef}
+        style={{ position: 'absolute', top: 0, left: 0, transformOrigin: '0 0', willChange: 'transform',
+          width: 'max-content', minWidth: '100%', minHeight: '100%', padding: '60px 0 80px' }}>
+        <div style={{ position: 'absolute', inset: -6000, backgroundImage: gridSvg, backgroundSize: '120px 120px', pointerEvents: 'none', zIndex: -1 }} />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DCSection({ id, title, subtitle, children, gap = 48 }) {
+  const ctx = React.useContext(DCCtx);
+  const sid = id != null ? id : title;
+  const all = React.Children.toArray(dcFlatten(children));
+  const artboards = all.filter((c) => c && c.type === DCArtboard);
+  const rest = all.filter((c) => !(c && c.type === DCArtboard));
+  const sec = (ctx && sid && ctx.section(sid)) || {};
+  const allIds = artboards.map((a) => a.props.id != null ? a.props.id : a.props.label).filter(Boolean);
+  const srcKey = allIds.join('\x1f');
+  const hidden = sec.srcKey === srcKey ? (sec.hidden || []) : [];
+  const srcOrder = allIds.filter((k) => !hidden.includes(k));
+  const order = React.useMemo(() => {
+    const kept = (sec.order || []).filter((k) => srcOrder.includes(k));
+    return [...kept, ...srcOrder.filter((k) => !kept.includes(k))];
+  }, [sec.order, srcOrder.join('|')]);
+  const byId = Object.fromEntries(artboards.map((a) => [a.props.id != null ? a.props.id : a.props.label, a]));
+  return (
+    <div data-dc-section={sid} style={{ marginBottom: 'calc(80px * var(--dc-inv-zoom, 1))', position: 'relative' }}>
+      <div style={{ padding: '0 60px' }}>
+        <div className="dc-sectionhead" style={{ paddingBottom: 36 }}>
+          <DCEditable tag="div" value={sec.title != null ? sec.title : title}
+            onChange={(v) => ctx && sid && ctx.patchSection(sid, { title: v })}
+            style={{ fontSize: 28, fontWeight: 600, color: DC.title, letterSpacing: -0.4, marginBottom: 6, display: 'inline-block' }} />
+          {subtitle && <div style={{ fontSize: 16, color: DC.subtitle }}>{subtitle}</div>}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>
+        {order.map((k) => (
+          <DCArtboardFrame key={k} sectionId={sid} artboard={byId[k]} order={order}
+            label={(sec.labels || {})[k] != null ? (sec.labels || {})[k] : byId[k].props.label}
+            onRename={(v) => ctx && ctx.patchSection(sid, (x) => ({ labels: { ...x.labels, [k]: v } }))}
+            onReorder={(next) => ctx && ctx.patchSection(sid, { order: next })}
+            onDelete={() => ctx && ctx.patchSection(sid, (x) => ({
+              hidden: [...(x.srcKey === srcKey ? (x.hidden || []) : []), k], srcKey }))}
+            onFocus={() => ctx && ctx.setFocus(`${sid}/${k}`)} />
+        ))}
+      </div>
+      {rest}
+    </div>
+  );
+}
+
+function DCArtboard() { return null; }
+
+function DCArtboardFrame({ sectionId, artboard, label, order, onRename, onReorder, onFocus, onDelete }) {
+  const { id: rawId, label: rawLabel, width = 260, height = 480, children, style = {} } = artboard.props;
+  const id = rawId != null ? rawId : rawLabel;
+  const ref = React.useRef(null);
+  const cardRef = React.useRef(null);
+  const menuRef = React.useRef(null);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [confirming, setConfirming] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!menuOpen) { setConfirming(false); return; }
+    const off = (e) => { if (!menuRef.current || !menuRef.current.contains(e.target)) setMenuOpen(false); };
+    document.addEventListener('pointerdown', off, true);
+    return () => document.removeEventListener('pointerdown', off, true);
+  }, [menuOpen]);
+
+  const onGripDown = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const me = ref.current;
+    const scale = me.getBoundingClientRect().width / me.offsetWidth || 1;
+    const peers = Array.from(document.querySelectorAll(`[data-dc-section="${sectionId}"] [data-dc-slot]`));
+    const homes = peers.map((el) => ({ el, id: el.dataset.dcSlot, x: el.getBoundingClientRect().left }));
+    const slotXs = homes.map((h) => h.x);
+    const startIdx = order.indexOf(id);
+    const startX = e.clientX;
+    let liveOrder = order.slice();
+    me.classList.add('dc-dragging');
+    const layout = () => {
+      for (const h of homes) {
+        if (h.id === id) continue;
+        const slot = liveOrder.indexOf(h.id);
+        h.el.style.transform = `translateX(${(slotXs[slot] - h.x) / scale}px)`;
+      }
+    };
+    const move = (ev) => {
+      const dx = ev.clientX - startX;
+      me.style.transform = `translateX(${dx / scale}px)`;
+      const cur = homes[startIdx].x + dx;
+      let nearest = 0, best = Infinity;
+      for (let i = 0; i < slotXs.length; i++) {
+        const d = Math.abs(slotXs[i] - cur);
+        if (d < best) { best = d; nearest = i; }
+      }
+      if (liveOrder.indexOf(id) !== nearest) {
+        liveOrder = order.filter((k) => k !== id);
+        liveOrder.splice(nearest, 0, id);
+        layout();
+      }
+    };
+    const up = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      const finalSlot = liveOrder.indexOf(id);
+      me.classList.remove('dc-dragging');
+      me.style.transform = `translateX(${(slotXs[finalSlot] - homes[startIdx].x) / scale}px)`;
+      setTimeout(() => {
+        for (const h of homes) { h.el.style.transition = 'none'; h.el.style.transform = ''; }
+        if (liveOrder.join('|') !== order.join('|')) onReorder(liveOrder);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          for (const h of homes) h.el.style.transition = '';
+        }));
+      }, 180);
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  };
+
+  return (
+    <div ref={ref} data-dc-slot={id} style={{ position: 'relative', flexShrink: 0 }}>
+      <div className="dc-header" style={{ color: DC.label }} onPointerDown={(e) => e.stopPropagation()}>
+        <div className="dc-labelrow">
+          <div className="dc-grip" onPointerDown={onGripDown} title="Drag to reorder">
+            <svg width="9" height="13" viewBox="0 0 9 13" fill="currentColor"><circle cx="2" cy="2" r="1.1"/><circle cx="7" cy="2" r="1.1"/><circle cx="2" cy="6.5" r="1.1"/><circle cx="7" cy="6.5" r="1.1"/><circle cx="2" cy="11" r="1.1"/><circle cx="7" cy="11" r="1.1"/></svg>
+          </div>
+          <div className="dc-labeltext" onClick={onFocus} title="Click to focus">
+            <DCEditable value={label} onChange={onRename} onClick={(e) => e.stopPropagation()}
+              style={{ fontSize: 15, fontWeight: 500, color: DC.label, lineHeight: 1 }} />
+          </div>
+        </div>
+        <div className="dc-btns">
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button className="dc-kebab" title="More" onClick={() => setMenuOpen((o) => !o)}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="2.5" cy="6" r="1.1"/><circle cx="6" cy="6" r="1.1"/><circle cx="9.5" cy="6" r="1.1"/></svg>
+            </button>
+            {menuOpen && (
+              <div className="dc-menu" onPointerDown={(e) => e.stopPropagation()}>
+                <button className="dc-danger"
+                  onClick={() => { if (confirming) { setMenuOpen(false); onDelete(); } else setConfirming(true); }}>
+                  {confirming ? 'Click again to delete' : 'Delete'}
+                </button>
+              </div>
+            )}
+          </div>
+          <button className="dc-expand" onClick={onFocus} title="Focus">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M7 1h4v4M5 11H1V7M11 1L7.5 4.5M1 11l3.5-3.5"/></svg>
+          </button>
+        </div>
+      </div>
+      <div ref={cardRef} className="dc-card"
+        style={{ borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06)', overflow: 'hidden', width, height, background: '#fff', ...style }}>
+        {children || <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 13, fontFamily: DC.font }}>{id}</div>}
+      </div>
+    </div>
+  );
+}
+
+function DCEditable({ value, onChange, style, tag = 'span', onClick }) {
+  const T = tag;
+  return (
+    <T className="dc-editable" contentEditable suppressContentEditableWarning
+      onClick={onClick}
+      onPointerDown={(e) => e.stopPropagation()}
+      onBlur={(e) => onChange && onChange(e.currentTarget.textContent)}
+      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+      style={style}>{value}</T>
+  );
+}
+
+function DCFocusOverlay({ entry, sectionMeta, sectionOrder }) {
+  const ctx = React.useContext(DCCtx);
+  const { sectionId, artboard } = entry;
+  const sec = ctx.section(sectionId);
+  const meta = sectionMeta[sectionId];
+  const peers = meta.slotIds;
+  const aid = artboard.props.id != null ? artboard.props.id : artboard.props.label;
+  const idx = peers.indexOf(aid);
+  const secIdx = sectionOrder.indexOf(sectionId);
+  const go = (d) => { const n = peers[(idx + d + peers.length) % peers.length]; if (n) ctx.setFocus(`${sectionId}/${n}`); };
+  const goSection = (d) => {
+    const n = sectionOrder.length;
+    for (let i = 1; i < n; i++) {
+      const ns = sectionOrder[(((secIdx + d * i) % n) + n) % n];
+      const first = sectionMeta[ns] && sectionMeta[ns].slotIds[0];
+      if (first) { ctx.setFocus(`${ns}/${first}`); return; }
+    }
+  };
+  React.useEffect(() => {
+    const k = (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); goSection(-1); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); goSection(1); }
+    };
+    document.addEventListener('keydown', k);
+    return () => document.removeEventListener('keydown', k);
+  });
+  const { width = 260, height = 480, children } = artboard.props;
+  const [vp, setVp] = React.useState({ w: window.innerWidth, h: window.innerHeight });
+  React.useEffect(() => { const r = () => setVp({ w: window.innerWidth, h: window.innerHeight }); window.addEventListener('resize', r); return () => window.removeEventListener('resize', r); }, []);
+  const scale = Math.max(0.1, Math.min((vp.w - 200) / width, (vp.h - 260) / height, 2));
+  const [ddOpen, setDd] = React.useState(false);
+  const Arrow = ({ dir, onClick }) => (
+    <button onClick={(e) => { e.stopPropagation(); onClick(); }}
+      style={{ position: 'absolute', top: '50%', [dir]: 28, transform: 'translateY(-50%)',
+        border: 'none', background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.9)',
+        width: 44, height: 44, borderRadius: 22, fontSize: 18, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s' }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.18)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.08)')}>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d={dir === 'left' ? 'M11 3L5 9l6 6' : 'M7 3l6 6-6 6'} /></svg>
+    </button>
+  );
+  return ReactDOM.createPortal(
+    <div onClick={() => ctx.setFocus(null)}
+      onWheel={(e) => e.preventDefault()}
+      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(24,20,16,.6)', backdropFilter: 'blur(14px)',
+        fontFamily: DC.font, color: '#fff' }}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 72, display: 'flex', alignItems: 'flex-start', padding: '16px 20px 0', gap: 16 }}>
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setDd((o) => !o)}
+            style={{ border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', padding: '6px 8px', borderRadius: 6, textAlign: 'left', fontFamily: 'inherit' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.3 }}>{meta.title}</span>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ opacity: .7 }}><path d="M2 4l3.5 3.5L9 4"/></svg>
+            </span>
+            {meta.subtitle && <span style={{ display: 'block', fontSize: 13, opacity: .6, fontWeight: 400, marginTop: 2 }}>{meta.subtitle}</span>}
+          </button>
+          {ddOpen && (
+            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#2a251f', borderRadius: 8,
+              boxShadow: '0 8px 32px rgba(0,0,0,.4)', padding: 4, minWidth: 200, zIndex: 10 }}>
+              {sectionOrder.filter((sid) => sectionMeta[sid].slotIds.length).map((sid) => (
+                <button key={sid} onClick={() => { setDd(false); const f = sectionMeta[sid].slotIds[0]; if (f) ctx.setFocus(`${sid}/${f}`); }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+                    background: sid === sectionId ? 'rgba(255,255,255,.1)' : 'transparent', color: '#fff',
+                    padding: '8px 12px', borderRadius: 5, fontSize: 14, fontWeight: sid === sectionId ? 600 : 400, fontFamily: 'inherit' }}>
+                  {sectionMeta[sid].title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ flex: 1 }} />
+        <button onClick={() => ctx.setFocus(null)}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.12)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,.7)', width: 32, height: 32,
+            borderRadius: 16, fontSize: 20, cursor: 'pointer', lineHeight: 1, transition: 'background .12s' }}>×</button>
+      </div>
+      <div style={{ position: 'absolute', top: 64, bottom: 56, left: 100, right: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ width: width * scale, height: height * scale, position: 'relative' }}>
+          <div style={{ width, height, transform: `scale(${scale})`, transformOrigin: 'top left', background: '#fff', borderRadius: 2, overflow: 'hidden', boxShadow: '0 20px 80px rgba(0,0,0,.4)' }}>
+            {children || <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb' }}>{aid}</div>}
+          </div>
+        </div>
+        <div onClick={(e) => e.stopPropagation()} style={{ fontSize: 14, fontWeight: 500, opacity: .85, textAlign: 'center' }}>
+          {(sec.labels || {})[aid] != null ? (sec.labels || {})[aid] : artboard.props.label}
+          <span style={{ opacity: .5, marginLeft: 10, fontVariantNumeric: 'tabular-nums' }}>{idx + 1} / {peers.length}</span>
+        </div>
+      </div>
+      <Arrow dir="left" onClick={() => go(-1)} />
+      <Arrow dir="right" onClick={() => go(1)} />
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8 }}>
+        {peers.map((p, i) => (
+          <button key={p} onClick={() => ctx.setFocus(`${sectionId}/${p}`)}
+            style={{ border: 'none', padding: 0, cursor: 'pointer', width: 6, height: 6, borderRadius: 3,
+              background: i === idx ? '#fff' : 'rgba(255,255,255,.3)' }} />
+        ))}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* ════════════════════ screens_auth.jsx (preset-enabled) ════════════════════ */
+function fmtPhone(v) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length < 4) return d;
+  if (d.length < 8) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+}
+
+function QrCode({ size = 132 }) {
+  const n = 21, cell = size / n;
+  const finder = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+  const inFinder = (r, c) => {
+    const blocks = [[0, 0], [0, n - 7], [n - 7, 0]];
+    return blocks.some(([br, bc]) => {
+      const rr = r - br, cc = c - bc;
+      if (rr < 0 || rr > 6 || cc < 0 || cc > 6) return false;
+      const edge = rr === 0 || rr === 6 || cc === 0 || cc === 6;
+      const core = rr >= 2 && rr <= 4 && cc >= 2 && cc <= 4;
+      return edge || core;
+    });
+  };
+  const cells = [];
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    let on = false;
+    if (finder(r, c)) on = inFinder(r, c);
+    else on = ((r * 7 + c * 13 + r * c * 3) % 5) < 2;
+    if (on) cells.push(<rect key={`${r}-${c}`} x={c * cell} y={r * cell} width={cell} height={cell} fill="#212121" />);
+  }
+  return <svg width={size} height={size} style={{ background: '#fff', borderRadius: 8 }}>{cells}</svg>;
+}
+
+function LoginScreen({ preset }) {
+  const { nav, set, toast } = useApp();
+  const [tab, setTab] = useState(preset === 'login' ? 'login' : 'register');
+  const [phone, setPhone] = useState('');
+  const [role, setRole] = useState('parent');
+  const [agree, setAgree] = useState(false);
+  const valid = phone.replace(/\D/g, '').length >= 10 && (tab === 'login' || agree);
+  const submit = () => {
+    if (!valid) return;
+    if (tab === 'login') {
+      if (phone.replace(/\D/g, '') !== '01012345678') {
+        toast('등록되지 않은 번호입니다. 회원가입 탭을 눌러 가입해 주세요.', 'danger'); return;
+      }
+      set({ role: 'family', phone }); nav('family', 'right');
+    } else {
+      set({ role, phone });
+      if (role === 'parent') { set({ onboardingStep: 1 }); nav('onboarding', 'right'); }
+      else nav('group', 'right');
+    }
+  };
+  return (
+    <div className="scroll-y" style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ paddingTop: TOP_INSET + 24, padding: `${TOP_INSET + 24}px 24px 32px`, display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, marginBottom: 36, marginTop: 12 }}>
+          <BrandMark size={72} />
+          <div style={{ textAlign: 'center' }}>
+            <div className="t-display" style={{ color: 'var(--brand-dark)', fontWeight: 800, fontSize: 'calc(32px*var(--fz))' }}>안심맵</div>
+            <div className="t-h3" style={{ color: 'var(--g500)', fontWeight: 500, marginTop: 4 }}>부모님 위치 확인 서비스</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', background: 'var(--g100)', borderRadius: 12, padding: 4, marginBottom: 28 }}>
+          {[['login', '로그인'], ['register', '회원가입']].map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)} style={{ flex: 1, height: 44, borderRadius: 9,
+              background: tab === k ? '#fff' : 'transparent', color: tab === k ? 'var(--brand-dark)' : 'var(--g500)',
+              fontWeight: 700, fontSize: 'calc(16px*var(--fz))', boxShadow: tab === k ? '0 1px 4px rgba(0,0,0,.1)' : 'none', transition: 'all .15s' }}>{l}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22, flex: 1 }}>
+          <Field label="휴대폰 번호" value={phone} onChange={v => setPhone(fmtPhone(v))} placeholder="010-1234-5678" type="tel" big />
+          {tab === 'register' && (
+            <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label className="t-h3" style={{ color: 'var(--g800)' }}>역할 선택</label>
+                <RadioGroup value={role} onChange={setRole}
+                  options={[{ value: 'parent', emoji: '👵', label: '부모님' }, { value: 'family', emoji: '🧑', label: '가족 자녀' }]} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label className="t-h3" style={{ color: 'var(--g800)' }}>약관 동의</label>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <CheckRow checked={agree} onChange={setAgree} required>개인정보처리방침 동의</CheckRow>
+                  <button onClick={() => toast('개인정보처리방침 페이지로 이동합니다.')} className="t-body-sm press" style={{ color: 'var(--info)', fontWeight: 700, padding: 8, whiteSpace: 'nowrap' }}>보기</button>
+                </div>
+              </div>
+            </div>
+          )}
+          {tab === 'login' && (
+            <Banner tone="grey" icon="bell">데모 번호 <b className="mono">010-1234-5678</b> 로 로그인하면 가족 화면으로 이동합니다.</Banner>
+          )}
+        </div>
+        <div style={{ marginTop: 24 }}>
+          <Btn size="lg" disabled={!valid} onClick={submit}>{tab === 'login' ? '시작하기' : '동의하고 시작하기'}</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OnboardingScreen({ preset }) {
+  const { state, set, nav, toast } = useApp();
+  const step = state.onboardingStep || 1;
+  const [code, setCode] = useState('');
+  const [reqConsent, setReqConsent] = useState(step >= 3);
+  const [optConsent, setOptConsent] = useState(false);
+  const [perm, setPerm] = useState(preset === 'perm');
+  useEffect(() => { try { localStorage.setItem('ansim_onboarding', String(step)); } catch (e) {} }, [step]);
+  const go = s => set({ onboardingStep: s });
+  const header = (
+    <div style={{ paddingTop: TOP_INSET, padding: `${TOP_INSET}px 20px 14px`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--g100)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {step > 1 && <button className="press" onClick={() => go(step - 1)} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: -8 }}><Icon name="back" size={24} color="var(--g700)" stroke={2.2} /></button>}
+        <span className="t-h3" style={{ color: 'var(--g700)', fontWeight: 700 }}>안심맵 온보딩</span>
+      </div>
+      <Pill tone="on">{step} / 4</Pill>
+    </div>
+  );
+  const progress = (
+    <div style={{ display: 'flex', gap: 6, padding: '0 20px', marginBottom: 24 }}>
+      {[1, 2, 3, 4].map(i => <div key={i} style={{ flex: 1, height: 6, borderRadius: 999, background: i <= step ? 'var(--brand)' : 'var(--g200)', transition: 'background .3s' }} />)}
+    </div>
+  );
+  let body, footer;
+  if (step === 1) {
+    body = (
+      <div className="slide-in" style={{ padding: '8px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 20, marginTop: 24 }}>
+        <div style={{ fontSize: 80 }}>👵💚</div>
+        <div className="t-h1" style={{ color: 'var(--g900)' }}>안녕하세요, 부모님!</div>
+        <p className="t-h3" style={{ color: 'var(--g600)', fontWeight: 500, lineHeight: 1.6, maxWidth: 280 }}>
+          가족이 항상 안심할 수 있도록 위치를 공유해요. 설정은 자녀가 옆에서 도와드릴 수 있어요. 4단계면 끝납니다.
+        </p>
+      </div>
+    );
+    footer = <Btn size="lg" onClick={() => go(2)}>시작하기</Btn>;
+  } else if (step === 2) {
+    body = (
+      <div className="slide-in" style={{ padding: '8px 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div className="t-h2" style={{ color: 'var(--g900)' }}>자녀 휴대폰에 표시된 가족 초대 코드를 입력해 주세요.</div>
+        <Field label="초대 코드 (6자리)" value={code} onChange={v => setCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))} mono big placeholder="------" />
+        <Banner tone="grey" icon="users">코드는 가족 자녀가 그룹을 만들면 받을 수 있어요.</Banner>
+      </div>
+    );
+    footer = <Btn size="lg" disabled={code.length < 6} onClick={() => { set({ inviteCode: code }); go(3); }}>다음 단계로</Btn>;
+  } else if (step === 3) {
+    body = (
+      <div className="slide-in" style={{ padding: '8px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', gap: 10, padding: '14px 16px', background: '#FFF4E5', border: '2px solid #F0A33A', borderRadius: 14 }}>
+          <Icon name="alert" size={26} color="#B25E00" stroke={2.2} />
+          <div>
+            <div className="t-h3" style={{ color: '#B25E00', fontWeight: 800 }}>부모님 직접 조작 필수</div>
+            <div className="t-body-sm" style={{ color: '#9A5400', marginTop: 3, lineHeight: 1.5 }}>자녀의 대리 동의는 법적 처벌 대상이 될 수 있습니다.</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <CheckRow checked={reqConsent} onChange={setReqConsent} required>개인 위치정보 수집·이용 및 제3자 제공 동의</CheckRow>
+          <CheckRow checked={optConsent} onChange={setOptConsent}>[선택] 혜택 및 알림 수신 동의</CheckRow>
+        </div>
+        <button onClick={() => toast('위치기반서비스 이용약관 전문을 표시합니다.')} className="t-body-sm press" style={{ color: 'var(--info)', fontWeight: 700, alignSelf: 'flex-start' }}>약관 전문 내용보기</button>
+      </div>
+    );
+    footer = <Btn size="lg" disabled={!reqConsent} onClick={() => setPerm(true)}>위치 공유 시작하기</Btn>;
+  } else {
+    body = (
+      <div className="slide-in" style={{ padding: '8px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 20, marginTop: 24 }}>
+        <div style={{ width: 96, height: 96, borderRadius: 999, background: 'var(--brand-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="checkCircle" size={56} color="var(--brand)" stroke={2.2} />
+        </div>
+        <div className="t-h1" style={{ color: 'var(--g900)' }}>설정이 완료되었어요!</div>
+        <p className="t-h3" style={{ color: 'var(--g600)', fontWeight: 500, lineHeight: 1.6, maxWidth: 280 }}>
+          이제 가족들이 부모님의 위치를 확인할 수 있어요. 긴급할 땐 SOS 버튼만 누르세요.
+        </p>
+        {state.permDenied && <Banner tone="warn" icon="alert">위치 권한이 꺼져 있어요. 메인 화면 안내를 확인해 주세요.</Banner>}
+      </div>
+    );
+    footer = <Btn size="lg" onClick={() => { set({ onboarded: true }); try { localStorage.removeItem('ansim_onboarding'); } catch (e) {} nav('parent', 'right'); }}>안심맵 시작하기</Btn>;
+  }
+  return (
+    <div style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {header}
+      <div className="scroll-y" style={{ flex: 1, paddingTop: 20 }}>{progress}{body}</div>
+      <div style={{ padding: '12px 24px calc(22px + 12px)', borderTop: '1px solid var(--g100)' }}>{footer}</div>
+      <BottomSheet open={perm} onClose={() => setPerm(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Icon name="mapPin" size={32} color="var(--brand)" stroke={2} />
+            <div className="t-h3" style={{ color: 'var(--g900)' }}>'안심맵'에서 사용자의 위치에 접근하도록 허용하시겠습니까?</div>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Btn variant="outline" onClick={() => { setPerm(false); set({ permDenied: true }); go(4); }}>허용 안 함</Btn>
+            <Btn onClick={() => { setPerm(false); set({ permDenied: false, locationSharing: true }); go(4); }}>허용</Btn>
+          </div>
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}
+
+function GroupScreen({ preset }) {
+  const { state, set, nav, toast } = useApp();
+  const [mode, setMode] = useState(['create', 'join', 'done'].includes(preset) ? preset : preset === 'full' ? 'join' : 'select');
+  const [name, setName] = useState(preset === 'done' ? '마포구 홍길동가' : '');
+  const [code, setCode] = useState(preset === 'full' ? 'FULL00' : '');
+  const [err, setErr] = useState(preset === 'full' ? '그룹 인원 한도(5명)를 초과하여 진입할 수 없습니다.' : '');
+  const inviteCode = state.groupCode || 'KOEL92';
+  const copy = () => { toast('초대 코드가 클립보드에 복사되었습니다.', 'success'); };
+  let content;
+  if (mode === 'select') {
+    content = (
+      <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '8px 24px' }}>
+        <div className="t-h2" style={{ color: 'var(--g900)' }}>서비스를 시작하기 위해 그룹을 선택하거나 새로 만드세요.</div>
+        <Card pad={20} onClick={() => setMode('create')} style={{ display: 'flex', alignItems: 'center', gap: 14, border: '1.5px solid var(--g200)' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--brand-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="plus" size={26} color="var(--brand)" stroke={2.4} /></div>
+          <div style={{ flex: 1 }}><div className="t-h3" style={{ color: 'var(--g900)' }}>새로운 가족 그룹 생성</div><div className="t-body-sm" style={{ color: 'var(--g500)' }}>부모님과 가족을 초대하세요</div></div>
+          <Icon name="chevronRight" size={22} color="var(--g400)" />
+        </Card>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--g400)' }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--g200)' }} /><span className="t-body-sm">또는</span><div style={{ flex: 1, height: 1, background: 'var(--g200)' }} />
+        </div>
+        <Card pad={20} onClick={() => setMode('join')} style={{ display: 'flex', alignItems: 'center', gap: 14, border: '1.5px solid var(--g200)' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--g100)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="qr" size={26} color="var(--g700)" stroke={2} /></div>
+          <div style={{ flex: 1 }}><div className="t-h3" style={{ color: 'var(--g900)' }}>초대 코드로 그룹 참여</div><div className="t-body-sm" style={{ color: 'var(--g500)' }}>코드 입력 또는 QR 스캔</div></div>
+          <Icon name="chevronRight" size={22} color="var(--g400)" />
+        </Card>
+      </div>
+    );
+  } else if (mode === 'create') {
+    content = (
+      <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '8px 24px' }}>
+        <div className="t-h2" style={{ color: 'var(--g900)' }}>가족 그룹의 이름을 정해 주세요.</div>
+        <Field label="그룹 이름" value={name} onChange={setName} placeholder="예) 마포구 홍길동가" big />
+        <Btn size="lg" disabled={!name.trim()} onClick={() => { set({ groupName: name, groupCreated: true }); setMode('done'); }}>그룹 만들기</Btn>
+      </div>
+    );
+  } else if (mode === 'join') {
+    content = (
+      <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '8px 24px' }}>
+        <div className="t-h2" style={{ color: 'var(--g900)' }}>초대 코드 6자리를 입력하세요.</div>
+        <Field label="초대 코드" value={code} onChange={v => { setErr(''); setCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)); }} mono big placeholder="------" error={err} />
+        <button className="press" onClick={() => toast('카메라 QR 스캐너를 실행합니다.')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 12, border: '1.5px dashed var(--g300)', color: 'var(--g600)', fontWeight: 700, fontSize: 'calc(15px*var(--fz))' }}>
+          <Icon name="qr" size={22} color="var(--g600)" stroke={2} /> QR 코드 스캔하기
+        </button>
+        <Btn size="lg" disabled={code.length < 6} onClick={() => {
+          if (code === 'FULL00') { setErr('그룹 인원 한도(5명)를 초과하여 진입할 수 없습니다.'); return; }
+          set({ groupCode: code, joined: true }); nav('family', 'right');
+        }}>그룹 참여하기</Btn>
+        <Banner tone="grey" icon="bell">데모: <b className="mono">FULL00</b> 입력 시 정원 초과 오류를 볼 수 있어요.</Banner>
+      </div>
+    );
+  } else {
+    content = (
+      <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, padding: '8px 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: 56 }}>🎉</div>
+        <div className="t-h1" style={{ color: 'var(--g900)' }}>그룹 생성이 완료되었습니다!</div>
+        <p className="t-h3" style={{ color: 'var(--g600)', fontWeight: 500 }}>부모님과 다른 가족 자녀를 초대해 보세요.</p>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+          <span className="t-body-sm" style={{ color: 'var(--g500)', fontWeight: 600, textAlign: 'left' }}>초대 코드 (6자리)</span>
+          <button className="press" onClick={copy} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, height: 64, borderRadius: 14, background: 'var(--brand-light)', border: '2px solid var(--brand)' }}>
+            <span className="mono" style={{ fontSize: 'calc(30px*var(--fz))', fontWeight: 800, letterSpacing: '.22em', color: 'var(--brand-dark)' }}>{inviteCode}</span>
+            <Icon name="copy" size={22} color="var(--brand)" stroke={2} />
+          </button>
+        </div>
+        <div style={{ padding: 12, background: '#fff', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,.06)', marginTop: 4 }}><QrCode size={132} /></div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+      <MobileHeader title={mode === 'done' ? '초대하기' : '가족 그룹 설정'} onBack={mode === 'select' || mode === 'done' ? () => nav('login', 'left') : () => setMode('select')} />
+      <div className="scroll-y" style={{ flex: 1, paddingTop: 16 }}>{content}</div>
+      {mode === 'done' && <div style={{ padding: '12px 24px calc(22px + 12px)' }}><Btn size="lg" icon="mapPin" onClick={() => nav('family', 'right')}>지도 보러가기</Btn></div>}
+    </div>
+  );
+}
+
+/* ════════════════════ screens_parent.jsx (preset-enabled) ════════════════════ */
+function ParentMain({ preset }) {
+  const { state, set, nav, toast } = useApp();
+  const [sos, setSos] = useState(preset === 'sos-count' ? 'counting' : preset === 'sos-sent' ? 'sent' : 'idle');
+  const [count, setCount] = useState(2);
+  const sharing = state.locationSharing !== false && !state.consentRevoked;
+  const timer = useRef(null);
+  const startSos = () => { setCount(2); setSos('counting'); };
+  const cancel = () => { clearTimeout(timer.current); setSos('idle'); };
+  useEffect(() => {
+    if (preset) return;
+    if (sos !== 'counting') return;
+    if (count <= 0) { setSos('sent'); return; }
+    timer.current = setTimeout(() => setCount(c => c - 1), 1000);
+    return () => clearTimeout(timer.current);
+  }, [sos, count, preset]);
+  useEffect(() => {
+    if (preset) return;
+    if (sos === 'sent') { const t = setTimeout(() => setSos('idle'), 3400); return () => clearTimeout(t); }
+  }, [sos, preset]);
+  return (
+    <div style={{ height: '100%', background: 'var(--g50)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      <MobileHeader brand right={<IconBtn name="settings" onClick={() => nav('parent-settings', 'right')} />} />
+      <div className="scroll-y" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 20px 0' }}>
+        <div style={{ marginBottom: 12 }}>
+          <Banner tone="warn" icon="alert">화면을 켜두면 위치가 더 정확해요. 홈 화면에 추가하면 더 편리합니다.</Banner>
+        </div>
+        {state.permDenied && <div style={{ marginBottom: 12 }}><Banner tone="danger" icon="mapPin" action={<button className="t-caption press" onClick={() => toast('위치 권한 활성화 방법을 안내합니다.')} style={{ color: 'var(--danger)', fontWeight: 800, whiteSpace: 'nowrap' }}>방법 보기</button>}>위치 권한 꺼짐</Banner></div>}
+        <Card pad={18} style={{ display: 'flex', alignItems: 'center', gap: 14, border: sharing ? '1.5px solid var(--brand-light)' : '1.5px solid var(--g200)' }}>
+          <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
+            {sharing && <span className="ping-ring" style={{ position: 'absolute', inset: 0, borderRadius: 999, background: 'var(--brand)' }} />}
+            <div style={{ position: 'absolute', inset: 0, borderRadius: 999, background: sharing ? 'var(--brand)' : 'var(--g400)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="mapPin" size={24} color="#fff" stroke={2.2} />
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div className="t-h2" style={{ color: 'var(--g900)' }}>{sharing ? '위치 전송 중' : '위치 공유 꺼짐'}</div>
+            <div className="t-body-sm" style={{ color: 'var(--g500)', marginTop: 2 }}>{sharing ? '가족이 내 위치를 보고 있어요' : '가족이 내 위치를 볼 수 없어요'}</div>
+          </div>
+        </Card>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, minHeight: 280 }}>
+          <button className="press animate-sos-pulse" onClick={startSos}
+            style={{ width: 230, height: 230, borderRadius: 999, background: 'radial-gradient(circle at 38% 32%, #FF5A52, var(--danger))',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#fff' }}>
+            <Icon name="sos" size={64} color="#fff" stroke={2.4} />
+            <span style={{ fontSize: 'calc(34px*var(--fz))', fontWeight: 800, letterSpacing: '.04em' }}>SOS</span>
+            <span style={{ fontSize: 'calc(17px*var(--fz))', fontWeight: 700, opacity: .95 }}>긴급 호출</span>
+          </button>
+          <p className="t-h3" style={{ color: 'var(--g500)', fontWeight: 500, textAlign: 'center', maxWidth: 240 }}>위급할 때 버튼을 누르면 가족 모두에게 알림이 갑니다.</p>
+        </div>
+      </div>
+      <div style={{ padding: '14px 20px calc(22px + 12px)', borderTop: '1px solid var(--g200)', background: '#fff', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ flex: 1 }}>
+          <div className="t-h3" style={{ color: 'var(--g900)' }}>실시간 위치 공유</div>
+          <div className="t-body-sm" style={{ color: 'var(--g500)' }}>{sharing ? '켜짐 · 30초마다 전송' : '꺼짐'}</div>
+        </div>
+        <Toggle size="lg" on={sharing} onChange={v => {
+          if (state.consentRevoked) { toast('동의를 철회한 상태예요. 설정에서 다시 동의해 주세요.', 'danger'); return; }
+          set({ locationSharing: v }); toast(v ? '위치 공유를 켰어요. 가족에게 알렸습니다.' : '위치 공유를 껐어요. 가족에게 알렸습니다.', v ? 'success' : 'default');
+        }} />
+      </div>
+      {sos === 'counting' && (
+        <div className="dim-in" style={{ position: 'absolute', inset: 0, zIndex: 500, background: 'radial-gradient(circle at 50% 40%, #E53935, #B71C1C)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24, padding: 32 }}>
+          <div style={{ fontSize: 'calc(28px*var(--fz))', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>🚨 긴급 상황</div>
+          <div className="animate-throb" style={{ width: 180, height: 180, borderRadius: 999, background: 'rgba(255,255,255,.16)', border: '4px solid rgba(255,255,255,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 'calc(110px*var(--fz))', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{count}</span>
+          </div>
+          <p style={{ fontSize: 'calc(19px*var(--fz))', fontWeight: 600, color: '#fff', textAlign: 'center', lineHeight: 1.5 }}>가족들에게 SOS 알림과<br />현재 위치를 전송합니다.</p>
+          <button className="press" onClick={cancel} style={{ marginTop: 8, height: 60, padding: '0 48px', borderRadius: 999, background: '#fff', color: 'var(--danger)', fontSize: 'calc(20px*var(--fz))', fontWeight: 800 }}>발송 취소</button>
+        </div>
+      )}
+      {sos === 'sent' && (
+        <div className="dim-in" style={{ position: 'absolute', inset: 0, zIndex: 500, background: 'rgba(20,18,18,.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22, padding: 32 }}>
+          <div style={{ width: 110, height: 110, borderRadius: 999, background: 'rgba(76,175,80,.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="checkCircle" size={68} color="#69DB7C" stroke={2.2} />
+          </div>
+          <div style={{ fontSize: 'calc(24px*var(--fz))', fontWeight: 800, color: '#fff', textAlign: 'center' }}>가족에게 긴급 알림을<br />보냈습니다.</div>
+          <p style={{ fontSize: 'calc(16px*var(--fz))', color: 'rgba(255,255,255,.7)', textAlign: 'center' }}>📳 사이렌 진동이 울리고 있어요</p>
+          <button className="press" onClick={() => setSos('idle')} style={{ height: 56, padding: '0 40px', borderRadius: 12, background: 'rgba(255,255,255,.15)', color: '#fff', fontSize: 'calc(17px*var(--fz))', fontWeight: 700 }}>확인</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ParentSettings({ preset }) {
+  const { state, set, nav, toast } = useApp();
+  const [confirm, setConfirm] = useState(preset === 'revoke');
+  const battery = !!state.batterySaver;
+  const Row = ({ icon, label, onClick }) => (
+    <button className="press" onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '16px 16px', background: '#fff', borderBottom: '1px solid var(--g100)' }}>
+      <Icon name={icon} size={22} color="var(--g600)" stroke={2} />
+      <span className="t-body-md" style={{ color: 'var(--g800)', flex: 1, textAlign: 'left' }}>{label}</span>
+      <Icon name="chevronRight" size={20} color="var(--g400)" />
+    </button>
+  );
+  return (
+    <div style={{ height: '100%', background: 'var(--g50)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <MobileHeader title="설정" onBack={() => nav('parent', 'left')} />
+      <div className="scroll-y" style={{ flex: 1, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div>
+          <div className="t-overline" style={{ color: 'var(--g500)', padding: '0 4px 10px', display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="battery" size={16} color="var(--g500)" stroke={2} /> 배터리 절약 모드</div>
+          <Card pad={0}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16 }}>
+              <div style={{ flex: 1 }}>
+                <div className="t-body-md" style={{ color: 'var(--g900)' }}>배터리 절약 모드 켜기</div>
+                <div className="t-body-sm" style={{ color: 'var(--g500)', marginTop: 2 }}>위치 전송 주기가 3분으로 늘어납니다.</div>
+              </div>
+              <Toggle on={battery} onChange={v => { set({ batterySaver: v }); toast(v ? '배터리 절약 모드를 켰어요 (3분 주기)' : '배터리 절약 모드를 껐어요 (30초 주기)'); }} />
+            </div>
+          </Card>
+        </div>
+        <div>
+          <div className="t-overline" style={{ color: 'var(--g500)', padding: '0 4px 10px', display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="doc" size={16} color="var(--g500)" stroke={2} /> 법률 및 개인정보 보호</div>
+          <Card pad={0} style={{ overflow: 'hidden' }}>
+            <Row icon="doc" label="개인정보처리방침 열람" onClick={() => toast('개인정보처리방침 페이지를 표시합니다.')} />
+            <div style={{ marginBottom: -1 }}><Row icon="mapPin" label="위치기반서비스 이용약관" onClick={() => toast('위치기반서비스 이용약관을 표시합니다.')} /></div>
+          </Card>
+        </div>
+        <div>
+          <div className="t-overline" style={{ color: 'var(--danger)', padding: '0 4px 10px', display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="alert" size={16} color="var(--danger)" stroke={2} /> 위험 구역</div>
+          <Card pad={18} style={{ border: '1.5px solid var(--danger-light)' }}>
+            <p className="t-body" style={{ color: 'var(--g700)', marginBottom: 14, lineHeight: 1.5 }}>위치 정보 수집 동의를 철회하면 가족들이 더 이상 위치를 볼 수 없습니다.</p>
+            <Btn variant="dangerGhost" icon="trash" onClick={() => setConfirm(true)}>위치 공유 동의 철회</Btn>
+          </Card>
+        </div>
+      </div>
+      <BottomSheet open={confirm} onClose={() => setConfirm(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 999, background: 'var(--danger-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="alert" size={30} color="var(--danger)" stroke={2.2} />
+          </div>
+          <div className="t-h2" style={{ color: 'var(--g900)' }}>정말 동의를 철회하시겠어요?</div>
+          <p className="t-body" style={{ color: 'var(--g600)', lineHeight: 1.5 }}>동의를 철회하면 가족들이 나의 위치를 전혀 볼 수 없습니다. 자녀들에게도 철회 사실이 알림으로 전송됩니다.</p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <Btn variant="outline" onClick={() => setConfirm(false)}>취소</Btn>
+            <Btn variant="danger" onClick={() => { setConfirm(false); set({ consentRevoked: true, locationSharing: false, onboardingStep: 3 }); toast('위치 정보 제공 동의를 철회했습니다.', 'danger'); setTimeout(() => nav('onboarding', 'left'), 600); }}>철회하기</Btn>
+          </div>
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}
+
+/* ════════════════════ screens_family.jsx (preset-enabled) ════════════════════ */
+function FamilyMap({ preset }) {
+  const { state, nav, toast } = useApp();
+  const [sosOpen, setSosOpen] = useState(preset === 'sos' || preset === 'call');
+  const [calling, setCalling] = useState(preset === 'call');
+  const sharing = state.locationSharing !== false && !state.consentRevoked;
+  const markers = [{ x: 46, y: 38, emoji: '👵', label: '홍길순 (어머니)', color: 'var(--brand)', active: true, stale: !sharing }];
+  return (
+    <div style={{ height: '100%', background: 'var(--g100)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      <MobileHeader brand right={<IconBtn name="settings" onClick={() => toast('가족 설정 메뉴입니다.')} />} />
+      <div style={{ flex: 1, position: 'relative' }}>
+        <FakeMap markers={markers} dim={!sharing} grey={!sharing} />
+        {!sharing && (
+          <div style={{ position: 'absolute', top: 12, left: 12, right: 12, zIndex: 50 }}>
+            <Banner tone="grey" icon="mapPin">부모님이 위치 공유를 꺼두셨습니다.</Banner>
+          </div>
+        )}
+        <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 45, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button className="press" onClick={() => nav('family-geofence', 'right')} title="안전 구역" style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="shield" size={22} color="var(--brand)" stroke={2} /></button>
+        </div>
+        <button className="press" onClick={() => setSosOpen(true)} style={{ position: 'absolute', left: 14, bottom: 130, zIndex: 45, display: 'flex', alignItems: 'center', gap: 6, height: 40, padding: '0 14px', borderRadius: 999, background: 'var(--danger)', color: '#fff', fontWeight: 800, fontSize: 'calc(13px*var(--fz))', boxShadow: '0 4px 12px rgba(211,47,47,.4)' }}>
+          <Icon name="sos" size={18} color="#fff" stroke={2.4} /> SOS 수신 미리보기
+        </button>
+        <div style={{ position: 'absolute', left: 12, right: 12, bottom: 12, zIndex: 45 }}>
+          <Card pad={16}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: sharing ? 10 : 0 }}>
+              <Avatar emoji="👵" size={44} ring={sharing ? 'var(--brand)' : 'var(--g400)'} />
+              <div style={{ flex: 1 }}>
+                <div className="t-h3" style={{ color: 'var(--g900)' }}>홍길순 <span style={{ color: 'var(--g500)', fontWeight: 500 }}>(어머니)</span></div>
+                {sharing
+                  ? <div className="t-body-sm" style={{ color: 'var(--g600)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}><Icon name="mapPin" size={15} color="var(--brand)" stroke={2} /> 서울시 마포구 창전동 12-4</div>
+                  : <div className="t-body-sm" style={{ color: 'var(--g500)', marginTop: 2 }}>위치 공유가 꺼져 있어요</div>}
+              </div>
+              <Pill tone={sharing ? 'on' : 'off'} dot>{sharing ? '실시간' : '꺼짐'}</Pill>
+            </div>
+            {sharing && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: 'var(--g50)', borderRadius: 10 }}>
+                  <Icon name="battery" size={16} color="var(--brand)" stroke={2} /><span className="t-body-sm" style={{ color: 'var(--g700)', fontWeight: 600 }}>배터리 78%</span>
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: 'var(--g50)', borderRadius: 10 }}>
+                  <Icon name="clock" size={16} color="var(--g500)" stroke={2} /><span className="t-body-sm" style={{ color: 'var(--g700)', fontWeight: 600 }}>30초 전 갱신</span>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+      <BottomNav active="family" onNav={k => nav(k, 'right')} />
+      {sosOpen && (
+        <div className="dim-in" style={{ position: 'absolute', inset: 0, zIndex: 600, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
+          <div className="sheet-up" style={{ width: '100%', background: '#fff', borderRadius: 22, border: '2px solid var(--danger)', overflow: 'hidden' }}>
+            <div className="flash-red" style={{ background: 'var(--danger)', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10, opacity: 1 }}>
+              <Icon name="sos" size={28} color="#fff" stroke={2.4} />
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 'calc(20px*var(--fz))' }}>SOS 긴급 상황 발생!!</span>
+            </div>
+            <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Avatar emoji="👵" size={52} ring="var(--danger)" />
+                <div className="t-h2" style={{ color: 'var(--g900)' }}>홍길순 어르신이<br />도움을 요청하셨습니다!</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '12px 14px', background: 'var(--danger-light)', borderRadius: 12 }}>
+                <Icon name="mapPin" size={20} color="var(--danger)" stroke={2} />
+                <span className="t-body" style={{ color: 'var(--g800)', fontWeight: 600 }}>서울시 마포구 창전동 12-4 창전현대아파트 앞</span>
+              </div>
+              <Btn variant="danger" size="lg" icon="phone" onClick={() => setCalling(true)}>전화로 직접 연결하기</Btn>
+              <button className="press" onClick={() => setSosOpen(false)} style={{ color: 'var(--g500)', fontWeight: 700, fontSize: 'calc(15px*var(--fz))', padding: 8 }}>지도에서 위치 확인</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {calling && (
+        <div className="dim-in" style={{ position: 'absolute', inset: 0, zIndex: 700, background: 'linear-gradient(160deg,#1B5E20,#0E3D12)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '80px 32px 60px', color: '#fff' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+            <Avatar emoji="👵" size={110} />
+            <div style={{ fontSize: 'calc(26px*var(--fz))', fontWeight: 800 }}>홍길순 (어머니)</div>
+            <div style={{ fontSize: 'calc(16px*var(--fz))', opacity: .8 }}>연결 중…</div>
+          </div>
+          <button className="press" onClick={() => { setCalling(false); setSosOpen(false); }} style={{ width: 72, height: 72, borderRadius: 999, background: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(0,0,0,.4)' }}>
+            <Icon name="phone" size={32} color="#fff" stroke={2.4} style={{ transform: 'rotate(135deg)' }} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const HISTORY_DATA = {
+  '2026-05-31': {
+    path: [{ x: 16, y: 30 }, { x: 30, y: 34 }, { x: 38, y: 50 }, { x: 52, y: 56 }, { x: 64, y: 62 }, { x: 72, y: 74 }],
+    stops: [
+      { t: '10:20', label: '마포구 신촌로 12', tag: '출발', tone: 'start' },
+      { t: '11:15', label: '창전동 현대아파트 앞', tag: '', tone: 'mid' },
+      { t: '12:00', label: '마포노인복지관', tag: '도착', tone: 'end' },
+    ],
+  },
+  '2026-05-30': {
+    path: [{ x: 70, y: 24 }, { x: 56, y: 36 }, { x: 44, y: 44 }, { x: 30, y: 60 }],
+    stops: [
+      { t: '08:40', label: '자택 (창전동 12-4)', tag: '출발', tone: 'start' },
+      { t: '09:30', label: '마포구청 사거리', tag: '', tone: 'mid' },
+      { t: '10:10', label: '서교동 행복마트', tag: '도착', tone: 'end' },
+    ],
+  },
+  '2026-05-29': { path: [], stops: [] },
+};
+
+function FamilyHistory({ preset }) {
+  const { nav, toast } = useApp();
+  const dates = Object.keys(HISTORY_DATA);
+  const [date, setDate] = useState(preset === 'empty' ? '2026-05-29' : dates[0]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const data = HISTORY_DATA[date];
+  const hasData = data.stops.length > 0;
+  const toneColor = { start: 'var(--brand)', mid: 'var(--g500)', end: 'var(--danger)' };
+  return (
+    <div style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <MobileHeader title="이동 기록 조회" onBack={() => nav('family', 'left')} />
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--g100)', position: 'relative', zIndex: 30 }}>
+        <button className="press" onClick={() => setPickerOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', height: 48, padding: '0 16px', borderRadius: 12, border: '1.5px solid var(--g200)', background: '#fff' }}>
+          <Icon name="calendar" size={20} color="var(--brand)" stroke={2} />
+          <span className="t-body-md" style={{ flex: 1, textAlign: 'left', color: 'var(--g900)' }}>{date.replace(/-/g, '. ')}</span>
+          <Icon name="chevronDown" size={20} color="var(--g500)" />
+        </button>
+        {pickerOpen && (
+          <div className="dim-in" style={{ position: 'absolute', left: 16, right: 16, top: 64, background: '#fff', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,.15)', border: '1px solid var(--g200)', overflow: 'hidden', zIndex: 40 }}>
+            {dates.map(d => (
+              <button key={d} className="press" onClick={() => { setDate(d); setPickerOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '14px 16px', background: d === date ? 'var(--brand-light)' : '#fff', borderBottom: '1px solid var(--g100)' }}>
+                <span className="t-body-md" style={{ flex: 1, textAlign: 'left', color: d === date ? 'var(--brand-dark)' : 'var(--g800)' }}>{d.replace(/-/g, '. ')}</span>
+                {HISTORY_DATA[d].stops.length === 0 && <span className="t-caption" style={{ color: 'var(--g400)' }}>기록 없음</span>}
+                {d === date && <Icon name="check" size={18} color="var(--brand)" stroke={2.5} />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div style={{ height: 240, position: 'relative', flexShrink: 0, background: 'var(--g100)' }}>
+        {hasData ? (
+          <FakeMap path={data.path} showControls={false}>
+            <MapDot x={data.path[0].x} y={data.path[0].y} color="var(--brand)" label="출발" />
+            <MapDot x={data.path[data.path.length - 1].x} y={data.path[data.path.length - 1].y} color="var(--danger)" label="도착" />
+          </FakeMap>
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--g50)' }}>
+            <Icon name="route" size={40} color="var(--g300)" stroke={1.6} />
+          </div>
+        )}
+      </div>
+      <div className="scroll-y" style={{ flex: 1, padding: '18px 20px' }}>
+        <div className="t-overline" style={{ color: 'var(--g500)', marginBottom: 14 }}>시간대별 이동 이력 · 최대 7일</div>
+        {hasData ? (
+          <div style={{ position: 'relative', paddingLeft: 8 }}>
+            {data.stops.map((s, i) => (
+              <button key={i} className="press" onClick={() => toast(`${s.t} ${s.label} 위치로 이동합니다.`)} style={{ display: 'flex', gap: 14, width: '100%', textAlign: 'left', paddingBottom: i < data.stops.length - 1 ? 22 : 0, position: 'relative' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ width: 16, height: 16, borderRadius: 999, background: toneColor[s.tone], border: '3px solid #fff', boxShadow: `0 0 0 2px ${toneColor[s.tone]}`, zIndex: 2 }} />
+                  {i < data.stops.length - 1 && <span style={{ width: 2, flex: 1, background: 'var(--g200)', marginTop: 2 }} />}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="mono t-body-sm" style={{ color: 'var(--g500)', fontWeight: 700 }}>{s.t}</span>
+                    {s.tag && <Pill tone={s.tone === 'end' ? 'danger' : 'on'}>{s.tag}</Pill>}
+                  </div>
+                  <div className="t-body-md" style={{ color: 'var(--g900)', marginTop: 3 }}>{s.label}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '40px 20px', textAlign: 'center' }}>
+            <Icon name="calendar" size={48} color="var(--g300)" stroke={1.6} />
+            <div className="t-h3" style={{ color: 'var(--g600)' }}>이동 이력이 없습니다</div>
+            <p className="t-body-sm" style={{ color: 'var(--g500)', lineHeight: 1.5 }}>선택하신 날짜의 위치 이동 이력이 없습니다. 부모님 단말기 전원이나 네트워크 상태를 확인해 주세요.</p>
+          </div>
+        )}
+      </div>
+      <BottomNav active="family-history" onNav={k => nav(k, k === 'family-history' ? 'right' : 'left')} />
+    </div>
+  );
+}
+
+function FamilyChat() {
+  const { nav } = useApp();
+  const [msgs, setMsgs] = useState([
+    { id: 1, who: 'mom', name: '어머니', text: '얘들아 나 복지관 도착했다. 걱정 마라.', time: '12:02' },
+    { id: 2, who: 'me', text: '네 확인했어요! 무리하지 마세요 🙏', time: '12:04', read: true },
+    { id: 3, who: 'sis', name: '여동생', text: '엄마 이따 저녁에 전화드릴게요~', time: '12:06' },
+  ]);
+  const [text, setText] = useState('');
+  const scrollRef = useRef(null);
+  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [msgs]);
+  const send = () => {
+    const t = text.trim();
+    if (!t) return;
+    setMsgs(m => [...m, { id: Date.now(), who: 'me', text: t, time: new Date().toTimeString().slice(0, 5), read: false }]);
+    setText('');
+  };
+  const Bubble = ({ m }) => {
+    const mine = m.who === 'me';
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start', marginBottom: 14 }}>
+        {!mine && <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, paddingLeft: 4 }}><Avatar emoji={m.who === 'mom' ? '👵' : '🧑‍🦰'} size={24} /><span className="t-body-sm" style={{ color: 'var(--g600)', fontWeight: 600 }}>{m.name}</span></div>}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, flexDirection: mine ? 'row-reverse' : 'row', maxWidth: '82%' }}>
+          <div style={{ padding: '10px 14px', borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+            background: mine ? 'var(--brand)' : '#fff', color: mine ? '#fff' : 'var(--g900)',
+            border: mine ? 'none' : '1px solid var(--g200)', fontSize: 'calc(16px*var(--fz))', lineHeight: 1.45, wordBreak: 'break-word' }}>{m.text}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
+            {mine && m.read && <span className="t-caption" style={{ color: 'var(--brand)' }}>읽음</span>}
+            <span className="t-body-sm" style={{ color: 'var(--g400)', fontSize: 'calc(11px*var(--fz))' }}>{m.time}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div style={{ height: '100%', background: 'var(--g50)', display: 'flex', flexDirection: 'column' }}>
+      <MobileHeader title="가족 그룹 채팅방" sub="홍길순가 · 4명" onBack={() => nav('family', 'left')} />
+      <div ref={scrollRef} className="scroll-y" style={{ flex: 1, padding: '16px 16px 8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <span className="t-body-sm" style={{ background: 'rgba(0,0,0,.06)', color: 'var(--g600)', padding: '4px 12px', borderRadius: 999, fontWeight: 600 }}>2026년 5월 31일 일요일</span>
+        </div>
+        {msgs.map(m => <Bubble key={m.id} m={m} />)}
+      </div>
+      <div style={{ padding: '10px 12px', borderTop: '1px solid var(--g200)', background: '#fff', display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+        <input value={text} onChange={e => setText(e.target.value.slice(0, 500))} onKeyDown={e => e.key === 'Enter' && send()}
+          placeholder="안부 메시지를 입력하세요" style={{ flex: 1, height: 48, padding: '0 16px', borderRadius: 999, border: '1.5px solid var(--g200)', outline: 'none', fontSize: 'calc(16px*var(--fz))', background: 'var(--g50)' }} />
+        <button className="press" onClick={send} style={{ width: 48, height: 48, borderRadius: 999, background: text.trim() ? 'var(--brand)' : 'var(--g300)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .15s' }}>
+          <Icon name="send" size={22} color="#fff" stroke={2.2} />
+        </button>
+      </div>
+      <BottomNav active="family-chat" onNav={k => nav(k, 'left')} />
+    </div>
+  );
+}
+
+function FamilyGeofence({ preset }) {
+  const { nav, toast } = useApp();
+  const [center, setCenter] = useState({ x: 50, y: 42 });
+  const [radius, setRadius] = useState(500);
+  const [name, setName] = useState('마포 노인복지관');
+  const [upsell, setUpsell] = useState(preset === 'upsell');
+  const rUnits = 3 + (radius / 5000) * 34;
+  const fmtR = radius >= 1000 ? `${(radius / 1000).toFixed(1)}km` : `${radius}m`;
+  const onMapClick = e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setCenter({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
+  };
+  return (
+    <div style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <MobileHeader title="안전 구역 설정" onBack={() => nav('family', 'left')} />
+      <div style={{ height: 280, position: 'relative', flexShrink: 0, cursor: 'crosshair' }} onClick={onMapClick}>
+        <FakeMap circle={{ x: center.x, y: center.y, r: rUnits }} markers={[{ x: center.x, y: center.y, emoji: '🏡', color: 'var(--brand)' }]} showControls={false} />
+        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 50 }}><Banner tone="info" icon="mapPin">지도를 눌러 중심 위치를 옮기세요</Banner></div>
+      </div>
+      <div className="scroll-y" style={{ flex: 1, padding: '20px 20px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+        <Field label="구역 이름" value={name} onChange={setName} placeholder="예) 마포 노인복지관" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <label className="t-h3" style={{ color: 'var(--g800)' }}>반경 설정</label>
+            <span className="mono" style={{ fontWeight: 800, color: 'var(--brand-dark)', fontSize: 'calc(18px*var(--fz))' }}>{fmtR}</span>
+          </div>
+          <input type="range" min={100} max={5000} step={50} value={radius} onChange={e => setRadius(+e.target.value)}
+            style={{ width: '100%', accentColor: 'var(--brand)', height: 6 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="t-body-sm" style={{ color: 'var(--g400)' }}>100m</span><span className="t-body-sm" style={{ color: 'var(--g400)' }}>5km</span></div>
+        </div>
+      </div>
+      <div style={{ padding: '12px 20px calc(22px + 12px)', borderTop: '1px solid var(--g100)' }}>
+        <Btn size="lg" disabled={!name.trim()} icon="shieldCheck" onClick={() => setUpsell(true)}>안전 구역 저장</Btn>
+      </div>
+      <BottomSheet open={upsell} onClose={() => setUpsell(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 999, background: 'var(--brand-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="shield" size={30} color="var(--brand)" stroke={2} /></div>
+          <div className="t-h2" style={{ color: 'var(--g900)' }}>Free 플랜은 안전 구역 1개까지</div>
+          <p className="t-body" style={{ color: 'var(--g600)', lineHeight: 1.5 }}>현재 Free 플랜에서는 안전 구역을 최대 1개까지만 등록할 수 있습니다. Pro 플랜으로 업그레이드하시겠습니까?</p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <Btn variant="outline" onClick={() => { setUpsell(false); toast('안전 구역이 저장되었습니다.', 'success'); setTimeout(() => nav('family', 'left'), 500); }}>이대로 저장</Btn>
+            <Btn onClick={() => { setUpsell(false); toast('Pro 플랜 안내 페이지로 이동합니다.'); }}>Pro 업그레이드</Btn>
+          </div>
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}
+
+/* ════════════════════ screens_admin.jsx (preset-enabled) ════════════════════ */
+const ADMIN_GROUPS = [
+  { id: 'G-0102', name: '마포구 홍길동가', created: '2026-05-30', owner: '홍재민', parent: '홍길순 어르신', status: 'on', members: 4, last: '3초 전' },
+  { id: 'G-0089', name: '양천구 이정우가', created: '2026-05-28', owner: '이경우', parent: '김순희 어르신', status: 'off', members: 3, last: '2시간 전' },
+  { id: 'G-0045', name: '서대문구 박가네', created: '2026-05-25', owner: '박진희', parent: '박용식 어르신', status: 'revoked', members: 2, last: '3일 전' },
+  { id: 'G-0033', name: '강서구 김철수가', created: '2026-05-22', owner: '김민지', parent: '김말순 어르신', status: 'on', members: 5, last: '1분 전' },
+  { id: 'G-0021', name: '은평구 정가네', created: '2026-05-19', owner: '정수아', parent: '정복동 어르신', status: 'on', members: 3, last: '12분 전' },
+  { id: 'G-0014', name: '노원구 최정훈가', created: '2026-05-15', owner: '최정훈', parent: '최영자 어르신', status: 'off', members: 4, last: '5시간 전' },
+];
+const STATUS_MAP = { on: { tone: 'on', label: 'ON' }, off: { tone: 'off', label: 'OFF' }, revoked: { tone: 'danger', label: '동의철회' } };
+
+function AdminApp({ initialTab = 'groups', preset }) {
+  const { nav } = useApp();
+  const [tab, setTab] = useState(initialTab);
+  const tabs = [['groups', '회원 및 그룹 관리', 'users'], ['sms', 'SMS/알림톡 발송', 'message'], ['stats', '통계 대시보드', 'chart']];
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--g50)', fontSize: 14 }}>
+      <div style={{ height: 64, background: 'var(--brand-dark)', display: 'flex', alignItems: 'center', padding: '0 24px', gap: 28, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <BrandMark size={32} />
+          <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>안심맵 <span style={{ fontWeight: 500, opacity: .7 }}>관리자</span></span>
+        </div>
+        <div style={{ display: 'flex', gap: 4, flex: 1 }}>
+          {tabs.map(([k, label, icon]) => (
+            <button key={k} onClick={() => setTab(k)} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 16px', borderRadius: 8,
+              color: tab === k ? '#fff' : 'rgba(255,255,255,.65)', background: tab === k ? 'rgba(255,255,255,.16)' : 'transparent', fontWeight: 700, fontSize: 14, transition: 'all .15s' }}>
+              <Icon name={icon} size={18} color={tab === k ? '#fff' : 'rgba(255,255,255,.65)'} stroke={2} /> {label}
+            </button>
+          ))}
+        </div>
+        <button className="press" onClick={() => nav('login', 'left')} style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'rgba(255,255,255,.8)', fontWeight: 600, fontSize: 14 }}>
+          <Icon name="logout" size={18} color="rgba(255,255,255,.8)" stroke={2} /> 로그아웃
+        </button>
+      </div>
+      <div className="scroll-y" style={{ flex: 1, padding: 28 }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          {tab === 'groups' && <AdminGroups preset={preset} />}
+          {tab === 'sms' && <AdminSms preset={preset} />}
+          {tab === 'stats' && <AdminStats />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({ children, right }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+      <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--g900)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ width: 4, height: 20, background: 'var(--brand)', borderRadius: 2 }} />{children}
+      </h2>
+      {right}
+    </div>
+  );
+}
+
+function AdminGroups({ preset }) {
+  const { toast } = useApp();
+  const [q, setQ] = useState('');
+  const [sort, setSort] = useState('latest');
+  const [sel, setSel] = useState(preset === 'detail' ? ADMIN_GROUPS[0] : null);
+  let rows = ADMIN_GROUPS.filter(g => !q || g.name.includes(q) || g.owner.includes(q) || g.parent.includes(q));
+  if (sort === 'members') rows = [...rows].sort((a, b) => b.members - a.members);
+  const th = { textAlign: 'left', padding: '12px 16px', fontSize: 12, fontWeight: 700, color: 'var(--g500)', textTransform: 'uppercase', letterSpacing: '.04em', whiteSpace: 'nowrap' };
+  const td = { padding: '14px 16px', fontSize: 14, color: 'var(--g800)', borderTop: '1px solid var(--g100)', whiteSpace: 'nowrap' };
+  return (
+    <div>
+      <SectionTitle right={
+        <div style={{ display: 'flex', gap: 10 }}>
+          <select value={sort} onChange={e => setSort(e.target.value)} style={{ height: 40, padding: '0 12px', borderRadius: 8, border: '1.5px solid var(--g200)', fontWeight: 600, color: 'var(--g700)', background: '#fff' }}>
+            <option value="latest">최신 생성일순</option><option value="members">구성원 수순</option>
+          </select>
+          <button className="press" onClick={() => toast('엑셀 파일을 다운로드합니다.')} style={{ display: 'flex', alignItems: 'center', gap: 7, height: 40, padding: '0 16px', borderRadius: 8, background: 'var(--brand)', color: '#fff', fontWeight: 700 }}>
+            <Icon name="download" size={18} color="#fff" stroke={2} /> 엑셀 다운로드
+          </button>
+        </div>
+      }>그룹 및 회원 통합 목록</SectionTitle>
+      <div style={{ position: 'relative', maxWidth: 420, marginBottom: 16 }}>
+        <span style={{ position: 'absolute', left: 14, top: 11 }}><Icon name="search" size={20} color="var(--g400)" stroke={2} /></span>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="그룹명·자녀·부모님 검색"
+          style={{ width: '100%', height: 42, padding: '0 14px 0 44px', borderRadius: 8, border: '1.5px solid var(--g200)', outline: 'none', fontSize: 14 }} />
+      </div>
+      <Card pad={0} style={{ overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead style={{ background: 'var(--g50)' }}>
+            <tr><th style={th}>그룹 ID</th><th style={th}>그룹명</th><th style={th}>생성일</th><th style={th}>소유주(자녀)</th><th style={th}>부모님(상태)</th><th style={th}>구성원</th><th style={th}>마지막 연결</th></tr>
+          </thead>
+          <tbody>
+            {rows.map(g => {
+              const s = STATUS_MAP[g.status];
+              return (
+                <tr key={g.id} className="press" onClick={() => setSel(g)} style={{ cursor: 'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--brand-light)'} onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                  <td style={{ ...td, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--brand-dark)' }}>{g.id}</td>
+                  <td style={{ ...td, fontWeight: 600 }}>{g.name}</td>
+                  <td style={td}>{g.created}</td>
+                  <td style={td}>{g.owner}</td>
+                  <td style={td}><span style={{ marginRight: 8 }}>{g.parent}</span><Pill tone={s.tone} dot>{s.label}</Pill></td>
+                  <td style={td}>{g.members}명</td>
+                  <td style={{ ...td, color: g.last.includes('초') || g.last.includes('분') ? 'var(--brand)' : 'var(--g500)', fontWeight: 600 }}>{g.last}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Card>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20 }}>
+        {['«', '1', '2', '3', '4', '5', '»'].map((p, i) => (
+          <button key={i} style={{ minWidth: 36, height: 36, borderRadius: 8, border: '1px solid var(--g200)', fontWeight: 700,
+            background: p === '2' ? 'var(--brand)' : '#fff', color: p === '2' ? '#fff' : 'var(--g600)' }}>{p}</button>
+        ))}
+      </div>
+      {sel && (
+        <div className="dim-in" onClick={() => setSel(null)} style={{ position: 'absolute', inset: 0, zIndex: 300, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: 440, background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
+            <div style={{ padding: '20px 24px', background: 'var(--brand-dark)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div><div style={{ fontFamily: 'var(--mono)', fontSize: 13, opacity: .7 }}>{sel.id}</div><div style={{ fontSize: 19, fontWeight: 800 }}>{sel.name}</div></div>
+              <button onClick={() => setSel(null)}><Icon name="close" size={24} color="#fff" stroke={2} /></button>
+            </div>
+            <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[['소유주(자녀)', sel.owner], ['부모님', sel.parent], ['생성일', sel.created], ['구성원 수', `${sel.members}명`], ['마지막 연결', sel.last]].map(([k, v]) => (
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--g100)', paddingBottom: 12 }}>
+                  <span style={{ color: 'var(--g500)', fontWeight: 600 }}>{k}</span><span style={{ color: 'var(--g900)', fontWeight: 700 }}>{v}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--g500)', fontWeight: 600 }}>위치 공유 상태</span><Pill tone={STATUS_MAP[sel.status].tone} dot>{STATUS_MAP[sel.status].label}</Pill>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminSms({ preset }) {
+  const { toast } = useApp();
+  const [channel, setChannel] = useState(preset === 'alimtalk' ? 'alimtalk' : 'sms');
+  const [recipients, setRecipients] = useState('010-1234-5678, 010-9876-5432');
+  const [msg, setMsg] = useState('[안심맵 긴급 공지]\n금일 새벽 서버 정기 점검이 예정되어 있어 일시적으로 서비스 이용이 제한될 수 있습니다.');
+  const [confirm, setConfirm] = useState(preset === 'confirm');
+  const count = msg.length;
+  const isLms = count > 90;
+  const nRecipients = recipients.split(',').map(s => s.trim()).filter(Boolean).length;
+  return (
+    <div>
+      <SectionTitle>긴급 대고객 메시지 발송 시스템</SectionTitle>
+      <Card pad={24} style={{ marginBottom: 20 }}>
+        <div style={{ fontWeight: 700, color: 'var(--g700)', marginBottom: 12 }}>발송 채널</div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {[['sms', '일반 SMS / LMS 문자메시지', 'message'], ['alimtalk', '카카오 알림톡 (비즈 채널 템플릿)', 'bell']].map(([k, l, ic]) => (
+            <button key={k} onClick={() => setChannel(k)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px', borderRadius: 12,
+              border: `2px solid ${channel === k ? 'var(--brand)' : 'var(--g200)'}`, background: channel === k ? 'var(--brand-light)' : '#fff', textAlign: 'left' }}>
+              <span style={{ width: 22, height: 22, borderRadius: 999, border: `2px solid ${channel === k ? 'var(--brand)' : 'var(--g300)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{channel === k && <span style={{ width: 11, height: 11, borderRadius: 999, background: 'var(--brand)' }} />}</span>
+              <Icon name={ic} size={20} color={channel === k ? 'var(--brand-dark)' : 'var(--g500)'} stroke={2} />
+              <span style={{ fontWeight: 700, color: channel === k ? 'var(--brand-dark)' : 'var(--g700)' }}>{l}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <Card pad={24}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, color: 'var(--g700)' }}>수신 대상 번호 (쉼표 구분)</span>
+            <Pill tone="info">{nRecipients}명</Pill>
+          </div>
+          <textarea value={recipients} onChange={e => setRecipients(e.target.value)} placeholder="010-1234-5678, 010-9876-5432"
+            style={{ width: '100%', height: 220, padding: 14, borderRadius: 10, border: '1.5px solid var(--g200)', outline: 'none', resize: 'none', fontFamily: 'var(--mono)', fontSize: 14, lineHeight: 1.7 }} />
+        </Card>
+        <Card pad={24}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, color: 'var(--g700)' }}>메시지 작성 내용</span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: isLms ? 'var(--danger)' : 'var(--g500)' }}>{count} / 90자 {isLms ? '· LMS 자동 전환' : '· 단문 SMS'}</span>
+          </div>
+          <textarea value={msg} onChange={e => setMsg(e.target.value)}
+            style={{ width: '100%', height: 220, padding: 14, borderRadius: 10, border: '1.5px solid var(--g200)', outline: 'none', resize: 'none', fontSize: 15, lineHeight: 1.7 }} />
+        </Card>
+      </div>
+      <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end' }}>
+        <button className="press" disabled={!nRecipients || !msg.trim()} onClick={() => setConfirm(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, height: 48, padding: '0 32px', borderRadius: 10, fontWeight: 800, fontSize: 16,
+            background: (!nRecipients || !msg.trim()) ? 'var(--g300)' : 'var(--brand)', color: '#fff', cursor: (!nRecipients || !msg.trim()) ? 'not-allowed' : 'pointer' }}>
+          <Icon name="send" size={20} color="#fff" stroke={2} /> 즉시 메시지 발송
+        </button>
+      </div>
+      {confirm && (
+        <div className="dim-in" onClick={() => setConfirm(false)} style={{ position: 'absolute', inset: 0, zIndex: 300, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: 400, background: '#fff', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 999, background: 'var(--brand-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="send" size={26} color="var(--brand)" stroke={2} /></div>
+            <div style={{ fontSize: 19, fontWeight: 800, color: 'var(--g900)' }}>총 {nRecipients}명에게 발송할까요?</div>
+            <p style={{ margin: 0, color: 'var(--g600)', lineHeight: 1.5 }}>{channel === 'sms' ? (isLms ? 'LMS' : 'SMS') : '카카오 알림톡'} 채널로 즉시 발송됩니다. 발송 후 취소할 수 없습니다.</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setConfirm(false)} style={{ flex: 1, height: 44, borderRadius: 8, border: '1.5px solid var(--g300)', fontWeight: 700, color: 'var(--g700)', background: '#fff' }}>취소</button>
+              <button onClick={() => { setConfirm(false); toast(`${nRecipients}명에게 메시지를 발송했습니다.`); }} style={{ flex: 1, height: 44, borderRadius: 8, fontWeight: 700, color: '#fff', background: 'var(--brand)' }}>발송하기</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminStats() {
+  const { toast } = useApp();
+  const dau = [2100, 2400, 3100, 3000, 3600, 4200, 4890];
+  const labels = ['05-01', '05-07', '05-14', '05-21', '05-25', '05-28', '05-31'];
+  const max = 5000, W = 1000, H = 280, pad = 40;
+  const xs = i => pad + (i / (dau.length - 1)) * (W - pad * 2);
+  const ys = v => H - pad - (v / max) * (H - pad * 1.4);
+  const pts = dau.map((v, i) => `${xs(i)},${ys(v)}`).join(' ');
+  const [hover, setHover] = useState(null);
+  const metrics = [
+    { icon: 'users', label: '일일 활성 사용자 (DAU)', value: '4,890', unit: '명', tone: 'var(--brand)' },
+    { icon: 'sos', label: '누적 SOS 호출 수', value: '24', unit: '건', tone: 'var(--danger)' },
+    { icon: 'heart', label: '생성된 가족 그룹 수', value: '1,250', unit: '개', tone: 'var(--info)' },
+  ];
+  return (
+    <div>
+      <SectionTitle right={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontWeight: 600, color: 'var(--g600)', fontSize: 14 }}>조회 기간</span>
+          <span style={{ padding: '8px 12px', borderRadius: 8, border: '1.5px solid var(--g200)', background: '#fff', fontWeight: 600, fontFamily: 'var(--mono)', fontSize: 13 }}>2026-05-01 ~ 2026-05-31</span>
+          <button className="press" onClick={() => toast('CSV 파일을 다운로드합니다.')} style={{ display: 'flex', alignItems: 'center', gap: 7, height: 40, padding: '0 16px', borderRadius: 8, background: 'var(--brand)', color: '#fff', fontWeight: 700 }}>
+            <Icon name="download" size={18} color="#fff" stroke={2} /> CSV 다운로드
+          </button>
+        </div>
+      }>안심맵 서비스 운영 통계</SectionTitle>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, marginBottom: 24 }}>
+        {metrics.map(m => (
+          <Card key={m.label} pad={24} style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 14, background: m.tone + '1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={m.icon} size={28} color={m.tone} stroke={2} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--g500)', marginBottom: 4 }}>{m.label}</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--g900)' }}>{m.value}<span style={{ fontSize: 16, fontWeight: 600, color: 'var(--g500)', marginLeft: 4 }}>{m.unit}</span></div>
+            </div>
+          </Card>
+        ))}
+      </div>
+      <Card pad={24}>
+        <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--g900)', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon name="chart" size={20} color="var(--brand)" stroke={2} /> 일별 활성 사용자(DAU) 추이
+        </div>
+        <div style={{ position: 'relative' }}>
+          <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+            <defs>
+              <linearGradient id="dauFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--brand)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {[0, 1, 2, 3, 4].map(i => { const v = max - i * 1250; const y = ys(v); return (
+              <g key={i}><line x1={pad} y1={y} x2={W - pad} y2={y} stroke="var(--g200)" strokeWidth="1" strokeDasharray="4 4" />
+                <text x={pad - 8} y={y + 4} textAnchor="end" fontSize="13" fill="var(--g400)" fontFamily="var(--mono)">{(v / 1000)}k</text></g>); })}
+            <polygon points={`${pad},${H - pad} ${pts} ${W - pad},${H - pad}`} fill="url(#dauFill)" />
+            <polyline points={pts} fill="none" stroke="var(--brand)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+            {dau.map((v, i) => (
+              <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} style={{ cursor: 'pointer' }}>
+                <circle cx={xs(i)} cy={ys(v)} r="12" fill="transparent" />
+                <circle cx={xs(i)} cy={ys(v)} r={hover === i ? 7 : 5} fill="#fff" stroke="var(--brand)" strokeWidth="3" />
+                <text x={xs(i)} y={H - pad + 22} textAnchor="middle" fontSize="13" fill="var(--g500)" fontFamily="var(--mono)">{labels[i]}</text>
+                {hover === i && (
+                  <g><rect x={xs(i) - 36} y={ys(v) - 42} width="72" height="30" rx="6" fill="var(--g900)" />
+                    <text x={xs(i)} y={ys(v) - 22} textAnchor="middle" fontSize="14" fontWeight="700" fill="#fff">{v.toLocaleString()}명</text></g>
+                )}
+              </g>
+            ))}
+          </svg>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ════════════════════ overview.jsx — 전체 화면 흐름 (34 boards) ════════════════════ */
+function renderRoute(route, preset) {
+  switch (route) {
+    case 'login': return <LoginScreen preset={preset} />;
+    case 'onboarding': return <OnboardingScreen preset={preset} />;
+    case 'group': return <GroupScreen preset={preset} />;
+    case 'parent': return <ParentMain preset={preset} />;
+    case 'parent-settings': return <ParentSettings preset={preset} />;
+    case 'family': return <FamilyMap preset={preset} />;
+    case 'family-history': return <FamilyHistory preset={preset} />;
+    case 'family-chat': return <FamilyChat />;
+    case 'family-geofence': return <FamilyGeofence preset={preset} />;
+    case 'admin-groups': return <AdminApp initialTab="groups" preset={preset} />;
+    case 'admin-sms': return <AdminApp initialTab="sms" preset={preset} />;
+    case 'admin-stats': return <AdminApp initialTab="stats" />;
+    default: return <ParentMain />;
+  }
+}
+
+function ScreenHost({ initialRoute, initialState = {}, device = 'mobile', preset }) {
+  const [route, setRoute] = useState(initialRoute);
+  const [dir, setDir] = useState('right');
+  const [state, setState] = useState({ role: 'parent', locationSharing: true, onboarded: true, onboardingStep: 1, ...initialState });
+  const [toastObj, setToastObj] = useState(null);
+  const nav = useCallback((to, d = 'right') => { setDir(d); setRoute(to); }, []);
+  const set = useCallback(patch => setState(s => ({ ...s, ...patch })), []);
+  const toast = useCallback((msg, tone = 'default') => {
+    setToastObj({ msg, tone });
+    clearTimeout(window['__t_' + initialRoute + preset]);
+    window['__t_' + initialRoute + preset] = setTimeout(() => setToastObj(null), 2400);
+  }, [initialRoute, preset]);
+  const ctx = { route, nav, state, set, toast };
+  const screen = renderRoute(route, route === initialRoute ? preset : undefined);
+  if (device === 'admin') {
+    return (
+      <AppCtx.Provider value={ctx}>
+        <ChromeWindow width={1180} height={760} url={`admin.ansimmap.kr/${route.replace('admin-', '')}`} tabs={[{ title: '안심맵 관리자 어드민' }]}>
+          <div style={{ position: 'relative', height: '100%' }}>{screen}<Toast toast={toastObj} /></div>
+        </ChromeWindow>
+      </AppCtx.Provider>
+    );
+  }
+  return (
+    <AppCtx.Provider value={ctx}>
+      <IOSDevice width={402} height={874}>
+        <div key={route} className={dir === 'right' ? 'slide-in' : ''} style={{ height: '100%', position: 'relative' }}>{screen}</div>
+        <Toast toast={toastObj} />
+      </IOSDevice>
+    </AppCtx.Provider>
+  );
+}
+
+const MW = 402, MH = 874, AW = 1180, AH = 760;
+const Host = (p) => <ScreenHost {...p} />;
+
+function Overview() {
+  return (
+    <DesignCanvas>
+      <DCSection id="entry" title="프론트엔드 · 진입 & 온보딩 동선" subtitle="가입 → 부모님 온보딩(4단계 + 위치권한) → 가족 그룹 생성·참여까지 · 기본 화면 + 모든 상태">
+        <DCArtboard id="s-login" label="① SCR-001 · 회원가입 (역할·약관)" width={MW} height={MH}><Host initialRoute="login" initialState={{ onboarded: false }} /></DCArtboard>
+        <DCArtboard id="s-login-l" label="①b SCR-001 · 로그인 탭" width={MW} height={MH}><Host initialRoute="login" preset="login" initialState={{ onboarded: false }} /></DCArtboard>
+        <DCArtboard id="s-ob1" label="② SCR-002 · 온보딩 1 · 환영" width={MW} height={MH}><Host initialRoute="onboarding" initialState={{ onboarded: false, onboardingStep: 1 }} /></DCArtboard>
+        <DCArtboard id="s-ob2" label="②b SCR-002 · 온보딩 2 · 초대 코드 입력" width={MW} height={MH}><Host initialRoute="onboarding" initialState={{ onboarded: false, onboardingStep: 2 }} /></DCArtboard>
+        <DCArtboard id="s-ob3" label="②c SCR-002 · 온보딩 3 · 위치 동의(경고)" width={MW} height={MH}><Host initialRoute="onboarding" initialState={{ onboarded: false, onboardingStep: 3 }} /></DCArtboard>
+        <DCArtboard id="s-obperm" label="②d SCR-002 · 위치 권한 요청 모달" width={MW} height={MH}><Host initialRoute="onboarding" preset="perm" initialState={{ onboarded: false, onboardingStep: 3 }} /></DCArtboard>
+        <DCArtboard id="s-ob4" label="②e SCR-002 · 온보딩 4 · 설정 완료" width={MW} height={MH}><Host initialRoute="onboarding" initialState={{ onboarded: false, onboardingStep: 4 }} /></DCArtboard>
+        <DCArtboard id="s-group" label="③ SCR-005 · 그룹 선택" width={MW} height={MH}><Host initialRoute="group" initialState={{ role: 'family' }} /></DCArtboard>
+        <DCArtboard id="s-group-c" label="③b SCR-005 · 새 그룹 생성" width={MW} height={MH}><Host initialRoute="group" preset="create" initialState={{ role: 'family' }} /></DCArtboard>
+        <DCArtboard id="s-group-d" label="③c SCR-005 · 생성 완료 · 초대코드/QR" width={MW} height={MH}><Host initialRoute="group" preset="done" initialState={{ role: 'family' }} /></DCArtboard>
+        <DCArtboard id="s-group-j" label="③d SCR-005 · 초대 코드로 참여" width={MW} height={MH}><Host initialRoute="group" preset="join" initialState={{ role: 'family' }} /></DCArtboard>
+        <DCArtboard id="s-group-f" label="③e SCR-005 · 정원 초과 오류" width={MW} height={MH}><Host initialRoute="group" preset="full" initialState={{ role: 'family' }} /></DCArtboard>
+      </DCSection>
+
+      <DCSection id="parent" title="프론트엔드 · 부모님(시니어) 동선" subtitle="평시 메인 → SOS 2초 카운트다운 → 발송 완료 · 권한/공유 예외 상태 + 설정·동의 철회">
+        <DCArtboard id="s-parent" label="④ SCR-003 · 부모님 메인 (평시)" width={MW} height={MH}><Host initialRoute="parent" /></DCArtboard>
+        <DCArtboard id="s-sos-c" label="④b SCR-003 · SOS 카운트다운" width={MW} height={MH}><Host initialRoute="parent" preset="sos-count" /></DCArtboard>
+        <DCArtboard id="s-sos-s" label="④c SCR-003 · SOS 발송 완료" width={MW} height={MH}><Host initialRoute="parent" preset="sos-sent" /></DCArtboard>
+        <DCArtboard id="s-perm-off" label="④d SCR-003 · 위치 권한 꺼짐 배너" width={MW} height={MH}><Host initialRoute="parent" initialState={{ permDenied: true }} /></DCArtboard>
+        <DCArtboard id="s-share-off" label="④e SCR-003 · 위치 공유 OFF" width={MW} height={MH}><Host initialRoute="parent" initialState={{ locationSharing: false }} /></DCArtboard>
+        <DCArtboard id="s-pset" label="⑤ SCR-004 · 부모님 설정" width={MW} height={MH}><Host initialRoute="parent-settings" /></DCArtboard>
+        <DCArtboard id="s-pset-r" label="⑤b SCR-004 · 동의 철회 확인" width={MW} height={MH}><Host initialRoute="parent-settings" preset="revoke" /></DCArtboard>
+      </DCSection>
+
+      <DCSection id="family" title="프론트엔드 · 가족(자녀) 동선" subtitle="실시간 지도 → SOS 수신·전화 → 이동 이력 → 채팅 → 안전 구역 · 공유 OFF/빈 상태/업셀 포함">
+        <DCArtboard id="s-family" label="⑥ SCR-006 · 실시간 지도" width={MW} height={MH}><Host initialRoute="family" /></DCArtboard>
+        <DCArtboard id="s-fam-sos" label="⑥b SCR-006 · SOS 수신 모달" width={MW} height={MH}><Host initialRoute="family" preset="sos" /></DCArtboard>
+        <DCArtboard id="s-fam-call" label="⑥c SCR-006 · 전화 연결 화면" width={MW} height={MH}><Host initialRoute="family" preset="call" /></DCArtboard>
+        <DCArtboard id="s-fam-off" label="⑥d SCR-006 · 위치 공유 OFF (회색)" width={MW} height={MH}><Host initialRoute="family" initialState={{ locationSharing: false }} /></DCArtboard>
+        <DCArtboard id="s-hist" label="⑦ SCR-007 · 위치 이동 이력" width={MW} height={MH}><Host initialRoute="family-history" /></DCArtboard>
+        <DCArtboard id="s-hist-e" label="⑦b SCR-007 · 이력 없는 날짜 (빈 상태)" width={MW} height={MH}><Host initialRoute="family-history" preset="empty" /></DCArtboard>
+        <DCArtboard id="s-chat" label="⑧ SCR-008 · 가족 그룹 채팅" width={MW} height={MH}><Host initialRoute="family-chat" /></DCArtboard>
+        <DCArtboard id="s-geo" label="⑨ SCR-009 · 안전 구역 설정" width={MW} height={MH}><Host initialRoute="family-geofence" /></DCArtboard>
+        <DCArtboard id="s-geo-up" label="⑨b SCR-009 · Pro 플랜 업그레이드 안내" width={MW} height={MH}><Host initialRoute="family-geofence" preset="upsell" /></DCArtboard>
+      </DCSection>
+
+      <DCSection id="admin" title="백엔드 · 관리자 어드민 (PC 웹)" subtitle="회원·그룹 모니터링(+상세) → SMS/알림톡 발송(+확인) → 운영 지표 분석">
+        <DCArtboard id="s-adm-g" label="⑩ SCR-010 · 회원 및 그룹 관리" width={AW} height={AH}><Host initialRoute="admin-groups" device="admin" /></DCArtboard>
+        <DCArtboard id="s-adm-gd" label="⑩b SCR-010 · 그룹 상세 모달" width={AW} height={AH}><Host initialRoute="admin-groups" preset="detail" device="admin" /></DCArtboard>
+        <DCArtboard id="s-adm-s" label="⑪ SCR-011 · SMS 발송" width={AW} height={AH}><Host initialRoute="admin-sms" device="admin" /></DCArtboard>
+        <DCArtboard id="s-adm-sa" label="⑪b SCR-011 · 카카오 알림톡 채널" width={AW} height={AH}><Host initialRoute="admin-sms" preset="alimtalk" device="admin" /></DCArtboard>
+        <DCArtboard id="s-adm-sc" label="⑪c SCR-011 · 발송 확인 모달" width={AW} height={AH}><Host initialRoute="admin-sms" preset="confirm" device="admin" /></DCArtboard>
+        <DCArtboard id="s-adm-t" label="⑫ SCR-012 · 운영 통계 대시보드" width={AW} height={AH}><Host initialRoute="admin-stats" device="admin" /></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Overview />);
+  </script>
+</body>
+</html>
