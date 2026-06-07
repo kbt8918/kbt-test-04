@@ -48,7 +48,7 @@ const ROUTE_NAMES: Record<Route, string> = {
 };
 
 export function PrototypeShell() {
-  const [route, setRoute] = useState<Route>("parent");
+  const [route, setRoute] = useState<Route>("login");
   const [dir, setDir] = useState<"left" | "right">("right");
   const [state, setState] = useState<DemoState>(INITIAL_STATE);
   const [toastObj, setToastObj] = useState<ToastObj | null>(null);

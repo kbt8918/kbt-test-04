@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleAuthProvider } from "@/components/GoogleAuthProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,7 +22,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <GoogleAuthProvider>
+          {children}
+        </GoogleAuthProvider>
+      </body>
     </html>
   );
 }

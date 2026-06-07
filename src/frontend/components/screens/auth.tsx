@@ -1,6 +1,7 @@
 "use client";
 // auth.tsx — SCR-001 로그인/회원가입, SCR-002 온보딩, SCR-005 가족 그룹
 import * as React from "react";
+import { useGoogleLogin } from "@react-oauth/google";
 import { useApp } from "../AppContext";
 import { api, ApiClientError } from "../../lib/apiClient";
 import { Icon } from "../Icon";
@@ -67,25 +68,6 @@ export function QrCode({ size = 132 }: { size?: number }) {
   );
 }
 
-export function GoogleLoginModal({ onClose, onLogin }: { onClose: () => void, onLogin: (acc: any) => void }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
-      <div className="animate-slide-up" style={{ width: '100%', background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 24px 40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <div className="t-h2" style={{ color: 'var(--g900)' }}>Google 계정 선택</div>
-          <button onClick={onClose}><Icon name="x" size={24} color="var(--g500)" /></button>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button onClick={() => onLogin({ email: 'user@gmail.com', emoji: '🧑‍💻' })} className="press" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, border: '1.5px solid var(--g200)', borderRadius: 12, textAlign: 'left' }}>
-            <span style={{ fontSize: 24, flexShrink: 0 }}>🧑‍💻</span>
-            <span className="t-body-md" style={{ color: 'var(--g900)', fontWeight: 600 }}>user@gmail.com</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ════════════════════ SCR-001 로그인 / 회원가입 ════════════════════ */
 export function LoginScreen() {
   const { nav, set, reset, toast } = useApp();
@@ -94,9 +76,59 @@ export function LoginScreen() {
   const [role, setRole] = useState<"parent" | "family">("parent");
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [googleModal, setGoogleModal] = useState(false);
   const [linkedGoogle, setLinkedGoogle] = useState<any>(null);
   const valid = phone.replace(/\D/g, "").length >= 10 && (tab === "login" || agree);
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setBusy(true);
+      try {
+        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        }).then(res => res.json());
+
+        const acc = {
+          email: userInfo.email,
+          emoji: '🧑‍💻',
+          picture: userInfo.picture,
+        };
+
+        if (tab === 'login') {
+          // 실제 API 호출: Google OAuth 로그인
+          const data = await api.googleLogin({
+            accessToken: tokenResponse.access_token,
+            email: userInfo.email,
+            name: userInfo.name,
+            picture: userInfo.picture,
+          });
+          reset({
+            mode: "live",
+            userId: data.userId,
+            phone: data.phone,
+            role: data.role,
+            groupId: data.groupId,
+            locationSharing: data.locationSharing,
+            googleUser: acc,
+          } as any);
+          nav('family', 'right');
+          toast('구글 로그인이 완료되었습니다.', 'success');
+        } else {
+          // 회원가입 탭: 구글 계정 연동만 저장
+          setLinkedGoogle(acc);
+          toast('구글 계정이 성공적으로 연동되었습니다.', 'success');
+        }
+      } catch (e) {
+        const msg = e instanceof ApiClientError ? e.message : '구글 정보 불러오기에 실패했습니다.';
+        toast(msg, 'danger');
+      } finally {
+        setBusy(false);
+      }
+    },
+    onError: () => {
+      toast('구글 로그인에 실패했습니다.', 'danger');
+      setBusy(false);
+    },
+  });
 
   // 실제 API 연동 — 성공 시 live 세션으로 전환
   const submit = async () => {
@@ -240,7 +272,11 @@ export function LoginScreen() {
             >
               {linkedGoogle && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--brand-light)', border: '1.5px solid var(--brand)', borderRadius: 12 }}>
-                  <span style={{ fontSize: 24, flexShrink: 0 }}>{linkedGoogle.emoji}</span>
+                  {linkedGoogle.picture ? (
+                    <img src={linkedGoogle.picture} alt="" style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0 }} />
+                  ) : (
+                    <span style={{ fontSize: 24, flexShrink: 0 }}>{linkedGoogle.emoji}</span>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="t-body-md" style={{ color: 'var(--brand-dark)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>{linkedGoogle.email}</div>
                     <div className="t-caption" style={{ color: 'var(--brand)' }}>최초 구글 계정 연동 완료</div>
@@ -312,7 +348,7 @@ export function LoginScreen() {
           </div>
           <button
             className="press"
-            onClick={() => setGoogleModal(true)}
+            onClick={() => googleLogin()}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               height: 54, borderRadius: 12, border: '1.5px solid var(--g200)',
@@ -329,22 +365,6 @@ export function LoginScreen() {
           </button>
         </div>
       </div>
-
-      {googleModal && (
-        <GoogleLoginModal
-          onClose={() => setGoogleModal(false)}
-          onLogin={(acc) => {
-            setGoogleModal(false);
-            if (tab === 'login') {
-              reset({ mode: "demo", role: 'family', googleUser: acc } as any);
-              nav('family', 'right');
-            } else {
-              setLinkedGoogle(acc);
-              toast('구글 계정이 성공적으로 연동되었습니다.', 'success');
-            }
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -180,6 +180,8 @@ export const api = {
   register: (b: { phone: string; role: Role; termsAgreed: boolean; privacyAgreed: boolean }) =>
     request<{ userId: string; phone: string; role: Role; createdAt: string }>("POST", "/api/auth/register", b),
   login: (b: { phone: string }) => request<LoginData>("POST", "/api/auth/login", b),
+  googleLogin: (b: { idToken?: string; accessToken?: string; email: string; name?: string; picture?: string }) =>
+    request<LoginData>("POST", "/api/auth/google", b),
   logout: () => request<null>("POST", "/api/auth/logout"),
   me: () => request<MeData>("GET", "/api/auth/me"),
 
