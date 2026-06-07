@@ -89,6 +89,7 @@ export function LoginScreen() {
 
         const acc = {
           email: userInfo.email,
+          name: userInfo.name,
           emoji: '🧑‍💻',
           picture: userInfo.picture,
         };
@@ -155,6 +156,9 @@ export function LoginScreen() {
           role,
           termsAgreed: true,
           privacyAgreed: true,
+          googleEmail: linkedGoogle?.email,
+          googleName: linkedGoogle?.name,
+          googlePicture: linkedGoogle?.picture,
         });
         reset({ mode: "live", userId: data.userId, phone: data.phone, role: data.role, groupId: null, googleUser: linkedGoogle } as any);
         if (role === "parent") {

@@ -13,6 +13,9 @@ interface Body {
   role?: string;
   termsAgreed?: boolean;
   privacyAgreed?: boolean;
+  googleEmail?: string;
+  googleName?: string;
+  googlePicture?: string;
 }
 
 export const POST = handler(async (req: NextRequest) => {
@@ -29,7 +32,18 @@ export const POST = handler(async (req: NextRequest) => {
   const { data: existing } = await db.from("users").select("id").eq("phone", phone).maybeSingle();
   if (existing) return fail("CONFLICT", "이미 가입된 휴대폰 번호입니다.");
 
-  // MVP: 휴대폰 기반 가입 — 비밀번호 컬럼은 NOT NULL 이므로 sentinel 해시 저장
+  // Google 계정 연동 가입이면 동일 이메일 중복 확인
+  const googleEmail = body.googleEmail?.trim() || null;
+  if (googleEmail) {
+    const { data: dupGoogle } = await db
+      .from("users")
+      .select("id")
+      .eq("google_email", googleEmail)
+      .maybeSingle();
+    if (dupGoogle) return fail("CONFLICT", "이미 연동된 Google 계정입니다.");
+  }
+
+  // MVP: 휴대폰 기반 가입 — sentinel 해시 저장
   const passwordHash = await bcrypt.hash(`ansim:${phone}`, 8);
   const now = new Date().toISOString();
 
@@ -41,12 +55,15 @@ export const POST = handler(async (req: NextRequest) => {
       password_hash: passwordHash,
       privacy_agreed_at: now,
       terms_agreed_at: now,
+      google_email: googleEmail,
+      google_name: body.googleName?.trim() || null,
+      google_picture: body.googlePicture?.trim() || null,
     })
     .select("id, phone, role, created_at")
     .single();
   if (error || !user) throw new ApiError("INTERNAL_ERROR", error?.message ?? "가입 처리 실패");
 
-  const token = signToken({ userId: user.id, role: user.role, phone: user.phone });
+  const token = signToken({ userId: user.id, role: user.role, phone: user.phone ?? "" });
   return ok(
     { userId: user.id, phone: user.phone, role: user.role, createdAt: user.created_at },
     201,

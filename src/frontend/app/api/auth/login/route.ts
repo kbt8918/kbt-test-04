@@ -29,7 +29,7 @@ export const POST = handler(async (req: NextRequest) => {
   const membership = await findMembership(db, user.id);
   await db.from("users").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id);
 
-  const token = signToken({ userId: user.id, role: user.role, phone: user.phone });
+  const token = signToken({ userId: user.id, role: user.role, phone: user.phone ?? "" });
   return ok(
     {
       userId: user.id,

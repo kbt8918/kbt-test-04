@@ -177,7 +177,15 @@ export interface StatsData {
 /* ── 엔드포인트 ── */
 export const api = {
   // 인증
-  register: (b: { phone: string; role: Role; termsAgreed: boolean; privacyAgreed: boolean }) =>
+  register: (b: {
+    phone: string;
+    role: Role;
+    termsAgreed: boolean;
+    privacyAgreed: boolean;
+    googleEmail?: string;
+    googleName?: string;
+    googlePicture?: string;
+  }) =>
     request<{ userId: string; phone: string; role: Role; createdAt: string }>("POST", "/api/auth/register", b),
   login: (b: { phone: string }) => request<LoginData>("POST", "/api/auth/login", b),
   googleLogin: (b: { idToken?: string; accessToken?: string; email: string; name?: string; picture?: string }) =>

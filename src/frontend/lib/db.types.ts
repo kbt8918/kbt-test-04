@@ -22,8 +22,8 @@ type TableShape<Row, Insert, Update> = {
 
 export interface UsersRow {
   id: string;
-  phone: string;
-  password_hash: string;
+  phone: string | null;
+  password_hash: string | null;
   name: string | null;
   role: UserRole;
   location_sharing: boolean;
@@ -32,6 +32,9 @@ export interface UsersRow {
   terms_agreed_at: string | null;
   location_interval: number;
   last_seen_at: string | null;
+  google_email: string | null;
+  google_name: string | null;
+  google_picture: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -166,6 +169,8 @@ export interface Database {
         WithDefaults<
           UsersRow,
           | "id"
+          | "phone"
+          | "password_hash"
           | "name"
           | "location_sharing"
           | "location_consent_at"
@@ -173,6 +178,9 @@ export interface Database {
           | "terms_agreed_at"
           | "location_interval"
           | "last_seen_at"
+          | "google_email"
+          | "google_name"
+          | "google_picture"
           | "created_at"
           | "updated_at"
           | "deleted_at"
