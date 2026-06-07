@@ -102,6 +102,23 @@ export interface JoinGroupData {
   memberCount: number;
   role: string;
 }
+export interface GroupMemberItem {
+  userId: string;
+  name: string | null;
+  role: Role;
+  relation: string | null;
+  isParent: boolean;
+  locationSharing: boolean;
+  lastSeenAt: string | null;
+}
+export interface GroupDetailData {
+  groupId: string;
+  groupName: string;
+  inviteCode: string;
+  memberCount: number;
+  members: GroupMemberItem[];
+  createdAt: string;
+}
 export interface CurrentLocationData {
   userId: string;
   latitude: number;
@@ -196,6 +213,9 @@ export const api = {
   // 그룹
   createGroup: (b: { groupName: string }) => request<CreateGroupData>("POST", "/api/groups", b),
   joinGroup: (b: { inviteCode: string }) => request<JoinGroupData>("POST", "/api/groups/join", b),
+  groupDetail: (groupId: string) => request<GroupDetailData>("GET", `/api/groups/${groupId}`),
+  setMemberRelation: (groupId: string, b: { userId: string; relation: string | null }) =>
+    request<{ userId: string; relation: string | null }>("PATCH", `/api/groups/${groupId}/members`, b),
 
   // 위치
   saveConsent: (b: { locationConsentRequired: boolean; marketingConsent?: boolean; consentVersion: string }) =>

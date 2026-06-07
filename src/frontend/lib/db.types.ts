@@ -57,6 +57,7 @@ export interface GroupMembersRow {
   group_id: string;
   user_id: string;
   role: MemberRole;
+  relation: string | null;
   joined_at: string;
 }
 
@@ -197,7 +198,7 @@ export interface Database {
       >;
       group_members: TableShape<
         GroupMembersRow,
-        WithDefaults<GroupMembersRow, "id" | "role" | "joined_at">,
+        WithDefaults<GroupMembersRow, "id" | "role" | "relation" | "joined_at">,
         Partial<GroupMembersRow>
       >;
       locations: TableShape<

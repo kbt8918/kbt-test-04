@@ -24,22 +24,30 @@ export const GET = handler(async (req: NextRequest, { params }) => {
 
   const { data: members, error } = await db
     .from("group_members")
-    .select("user_id")
+    .select("user_id, relation")
     .eq("group_id", groupId);
   if (error) throw new ApiError("INTERNAL_ERROR", error.message);
+
+  // user_id -> relation(호칭) 매핑
+  const relationByUser = new Map<string, string | null>(
+    (members ?? []).map((m) => [m.user_id, m.relation])
+  );
 
   const userIds = (members ?? []).map((m) => m.user_id);
   const { data: users, error: uErr } = userIds.length
     ? await db
         .from("users")
-        .select("id, role, location_sharing, last_seen_at")
+        .select("id, name, role, location_sharing, last_seen_at")
         .in("id", userIds)
     : { data: [], error: null };
   if (uErr) throw new ApiError("INTERNAL_ERROR", uErr.message);
 
   const memberList = (users ?? []).map((u) => ({
     userId: u.id,
+    name: u.name,
     role: u.role,
+    relation: relationByUser.get(u.id) ?? null,
+    isParent: u.role === "parent",
     locationSharing: u.location_sharing,
     lastSeenAt: u.last_seen_at,
   }));

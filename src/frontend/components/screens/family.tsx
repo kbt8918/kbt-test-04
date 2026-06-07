@@ -2,7 +2,7 @@
 // family.tsx — SCR-006 지도, SCR-007 이력, SCR-008 채팅, SCR-009 안전구역
 import * as React from "react";
 import { useApp } from "../AppContext";
-import { api, ApiClientError } from "../../lib/apiClient";
+import { api, ApiClientError, type GroupMemberItem } from "../../lib/apiClient";
 import { FakeMap, MapDot } from "../FakeMap";
 import { MapView, type GeoPoint } from "../MapView";
 import { Icon } from "../Icon";
@@ -22,6 +22,23 @@ import {
 
 const { useState, useEffect, useRef } = React;
 
+/* 멤버 표시 라벨: "이름 (호칭)" / "이름" / "호칭" / 폴백 */
+function memberLabel(m: { name: string | null; relation: string | null }, fallback = "부모님"): string {
+  const name = m.name?.trim();
+  const rel = m.relation?.trim();
+  if (name && rel) return `${name} (${rel})`;
+  if (name) return name;
+  if (rel) return rel;
+  return fallback;
+}
+
+/* 부모님 멤버들을 대표 라벨로 요약: 1명이면 그대로, 여러 명이면 "OOO 외 N명" */
+function parentsSummary(parents: { name: string | null; relation: string | null }[]): string {
+  if (parents.length === 0) return "부모님";
+  const first = memberLabel(parents[0]);
+  return parents.length === 1 ? first : `${first} 외 ${parents.length - 1}명`;
+}
+
 /* ════════════════════ SCR-006 가족 메인 (실시간 지도) ════════════════════ */
 export function FamilyMap() {
   const { state, nav, toast } = useApp();
@@ -32,6 +49,7 @@ export function FamilyMap() {
   const [liveSharing, setLiveSharing] = useState<boolean | null>(null);
   const [liveAddress, setLiveAddress] = useState<string | null>(null);
   const [liveCoord, setLiveCoord] = useState<GeoPoint | null>(null);
+  const [parents, setParents] = useState<GroupMemberItem[]>([]);
   // live 모드면 서버에서 가져온 공유 상태, 아니면 데모 상태
   const sharing = live
     ? liveSharing ?? false
@@ -63,7 +81,24 @@ export function FamilyMap() {
     };
   }, [live, groupId]);
 
-  const parentLabel = live ? "부모님" : "홍길순 (어머니)";
+  // live 모드: 그룹 구성원 중 부모님(role=parent) 조회 → 이름·호칭 표시 (F-005)
+  useEffect(() => {
+    if (!live) return;
+    let alive = true;
+    api
+      .groupDetail(groupId)
+      .then((d) => {
+        if (alive) setParents(d.members.filter((m) => m.isParent));
+      })
+      .catch(() => {
+        /* 멤버 조회 실패 시 기본 라벨 사용 */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [live, groupId]);
+
+  const parentLabel = live ? parentsSummary(parents) : "홍길순 (어머니)";
   const markers = [
     { x: 46, y: 38, emoji: "👵", label: parentLabel, color: "var(--brand)", active: true, stale: !sharing },
   ];
@@ -168,7 +203,7 @@ export function FamilyMap() {
               <div style={{ flex: 1 }}>
                 <div className="t-h3" style={{ color: "var(--g900)" }}>
                   {live ? (
-                    "부모님"
+                    parentLabel
                   ) : (
                     <>
                       홍길순 <span style={{ color: "var(--g500)", fontWeight: 500 }}>(어머니)</span>
@@ -1042,11 +1077,57 @@ export function FamilyGeofence() {
 type UpdateInterval = "30s" | "1m" | "3m";
 
 export function FamilySettings() {
-  const { nav, toast } = useApp();
+  const { state, nav, toast } = useApp();
+  const live = state.mode === "live" && !!state.groupId;
+  const groupId = state.groupId ?? "";
   const [locationAlert, setLocationAlert] = useState(true);
   const [batteryAlert, setBatteryAlert] = useState(true);
   const [interval, setInterval] = useState<UpdateInterval>("30s");
   const [leaveOpen, setLeaveOpen] = useState(false);
+  // live 모드 구성원 목록 + 호칭 편집
+  const [members, setMembers] = useState<GroupMemberItem[]>([]);
+  const [editTarget, setEditTarget] = useState<GroupMemberItem | null>(null);
+  const [relationInput, setRelationInput] = useState("");
+  const [savingRelation, setSavingRelation] = useState(false);
+
+  useEffect(() => {
+    if (!live) return;
+    let alive = true;
+    api
+      .groupDetail(groupId)
+      .then((d) => {
+        if (alive) setMembers(d.members);
+      })
+      .catch(() => {
+        /* 조회 실패 시 빈 목록 유지 */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [live, groupId]);
+
+  const openRelationEdit = (m: GroupMemberItem) => {
+    setEditTarget(m);
+    setRelationInput(m.relation ?? "");
+  };
+
+  const saveRelation = async () => {
+    if (!editTarget) return;
+    setSavingRelation(true);
+    const relation = relationInput.trim() || null;
+    try {
+      await api.setMemberRelation(groupId, { userId: editTarget.userId, relation });
+      setMembers((prev) =>
+        prev.map((m) => (m.userId === editTarget.userId ? { ...m, relation } : m))
+      );
+      toast(relation ? `호칭을 '${relation}'(으)로 저장했어요.` : "호칭을 해제했어요.", "success");
+      setEditTarget(null);
+    } catch (e) {
+      toast(e instanceof ApiClientError ? e.message : "호칭 저장에 실패했습니다.", "danger");
+    } finally {
+      setSavingRelation(false);
+    }
+  };
 
   const SectionLabel = ({ icon, label, danger }: { icon: string; label: string; danger?: boolean }) => (
     <div
@@ -1174,28 +1255,87 @@ export function FamilySettings() {
         <div>
           <SectionLabel icon="users" label="가족 구성원" />
           <Card pad={0} style={{ overflow: "hidden" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "14px 16px",
-                borderBottom: "1px solid var(--g100)",
-              }}
-            >
-              <Avatar emoji="👵" size={44} ring="var(--brand)" />
-              <div style={{ flex: 1 }}>
-                <div className="t-body-md" style={{ color: "var(--g900)", fontWeight: 600 }}>
-                  홍길순 <span style={{ color: "var(--g500)", fontWeight: 400 }}>(어머니)</span>
+            {live ? (
+              members.length === 0 ? (
+                <div className="t-body-sm" style={{ color: "var(--g500)", padding: "16px" }}>
+                  구성원을 불러오는 중…
                 </div>
-                <div className="t-body-sm" style={{ color: "var(--g500)", marginTop: 2 }}>
-                  010-1234-5678 · 연결됨
+              ) : (
+                members.map((m) => (
+                  <div
+                    key={m.userId}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "14px 16px",
+                      borderBottom: "1px solid var(--g100)",
+                    }}
+                  >
+                    <Avatar
+                      emoji={m.isParent ? "👵" : "🧑"}
+                      size={44}
+                      ring={m.isParent ? "var(--brand)" : "var(--g300)"}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="t-body-md" style={{ color: "var(--g900)", fontWeight: 600 }}>
+                        {memberLabel(m, m.isParent ? "부모님" : "가족")}
+                      </div>
+                      <div className="t-body-sm" style={{ color: "var(--g500)", marginTop: 2 }}>
+                        {m.isParent ? "부모님" : "가족"}
+                        {m.userId === state.userId ? " · 나" : ""}
+                        {" · "}
+                        {m.locationSharing ? "위치 공유 중" : "공유 꺼짐"}
+                      </div>
+                    </div>
+                    {m.isParent && (
+                      <button
+                        className="press"
+                        onClick={() => openRelationEdit(m)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "6px 10px",
+                          borderRadius: 8,
+                          background: "var(--brand-light)",
+                          color: "var(--brand-dark)",
+                          fontWeight: 700,
+                          fontSize: "calc(13px*var(--fz))",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon name="edit" size={14} color="var(--brand-dark)" stroke={2.2} />
+                        {m.relation ? "호칭 변경" : "호칭 지정"}
+                      </button>
+                    )}
+                  </div>
+                ))
+              )
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "14px 16px",
+                  borderBottom: "1px solid var(--g100)",
+                }}
+              >
+                <Avatar emoji="👵" size={44} ring="var(--brand)" />
+                <div style={{ flex: 1 }}>
+                  <div className="t-body-md" style={{ color: "var(--g900)", fontWeight: 600 }}>
+                    홍길순 <span style={{ color: "var(--g500)", fontWeight: 400 }}>(어머니)</span>
+                  </div>
+                  <div className="t-body-sm" style={{ color: "var(--g500)", marginTop: 2 }}>
+                    010-1234-5678 · 연결됨
+                  </div>
                 </div>
+                <Pill tone="on" dot>
+                  활성
+                </Pill>
               </div>
-              <Pill tone="on" dot>
-                활성
-              </Pill>
-            </div>
+            )}
             <button
               className="press"
               onClick={() => toast("가족 초대 링크를 복사했습니다.", "success")}
@@ -1332,6 +1472,52 @@ export function FamilySettings() {
           </Card>
         </div>
       </div>
+
+      {/* 호칭 지정/변경 */}
+      <BottomSheet open={!!editTarget} onClose={() => setEditTarget(null)}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="t-h2" style={{ color: "var(--g900)" }}>
+            {editTarget?.name ? `${editTarget.name} 님` : "부모님"} 호칭 지정
+          </div>
+          <p className="t-body-sm" style={{ color: "var(--g600)", lineHeight: 1.5 }}>
+            가족 화면에 표시될 호칭을 입력하세요. 예) 어머니, 아버지, 할머니. 비워두면 호칭이 해제됩니다.
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {["어머니", "아버지", "할머니", "할아버지"].map((preset) => (
+              <button
+                key={preset}
+                className="press"
+                onClick={() => setRelationInput(preset)}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 999,
+                  border: "1.5px solid var(--g200)",
+                  background: relationInput === preset ? "var(--brand-light)" : "#fff",
+                  color: relationInput === preset ? "var(--brand-dark)" : "var(--g700)",
+                  fontWeight: 600,
+                  fontSize: "calc(14px*var(--fz))",
+                }}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+          <Field
+            label="호칭"
+            value={relationInput}
+            onChange={(v) => setRelationInput(v.slice(0, 20))}
+            placeholder="예) 어머니"
+          />
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <Btn variant="outline" onClick={() => setEditTarget(null)}>
+              취소
+            </Btn>
+            <Btn disabled={savingRelation} onClick={() => void saveRelation()}>
+              {savingRelation ? "저장 중…" : "저장"}
+            </Btn>
+          </div>
+        </div>
+      </BottomSheet>
 
       <BottomSheet open={leaveOpen} onClose={() => setLeaveOpen(false)}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

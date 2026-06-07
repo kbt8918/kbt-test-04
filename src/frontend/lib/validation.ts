@@ -42,6 +42,12 @@ export function isValidGroupName(name: string): boolean {
   return trimmed.length >= 1 && trimmed.length <= 20;
 }
 
+/** 호칭/관계 라벨 검증 — 1~20자 (빈 문자열은 "지정 해제"로 별도 처리) */
+export function isValidRelation(relation: string): boolean {
+  const trimmed = relation.trim();
+  return trimmed.length >= 1 && trimmed.length <= 20;
+}
+
 /** 채팅 메시지 검증 — 1~500자 (F-018) */
 export function isValidChatMessage(content: string): boolean {
   const len = content.trim().length;
