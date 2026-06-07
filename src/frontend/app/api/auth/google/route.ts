@@ -31,20 +31,18 @@ async function fetchGoogleUserInfo(accessToken: string): Promise<{ email?: strin
 export const POST = handler(async (req: NextRequest) => {
   const body = await readJson<Body>(req);
 
-  // accessToken 이 있으면 Google 서버로 재검증하여 이메일 신뢰성 확보
-  let email = body.email;
-  let name = body.name;
-  let picture = body.picture;
-  if (body.accessToken) {
-    const verified = await fetchGoogleUserInfo(body.accessToken);
-    if (verified?.email) {
-      email = verified.email;
-      name = verified.name ?? name;
-      picture = verified.picture ?? picture;
-    }
+  // 신원(이메일)은 반드시 Google 서버 재검증으로만 확정한다.
+  // 클라이언트가 보낸 body.email 은 위조 가능하므로 신원 근거로 신뢰하지 않는다.
+  if (!body.accessToken) {
+    return fail("BAD_REQUEST", "Google accessToken 이 필요합니다.");
   }
-
-  if (!email) return fail("BAD_REQUEST", "Google 계정 이메일을 확인할 수 없습니다.");
+  const verified = await fetchGoogleUserInfo(body.accessToken);
+  if (!verified?.email) {
+    return fail("UNAUTHORIZED", "Google 토큰 검증에 실패했습니다. 다시 로그인해 주세요.");
+  }
+  const email = verified.email;
+  const name = verified.name ?? body.name;
+  const picture = verified.picture ?? body.picture;
 
   const db = createAdminClient();
 
