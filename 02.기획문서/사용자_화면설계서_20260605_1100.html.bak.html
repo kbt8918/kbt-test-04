@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>안심맵 화면설계서 v1.0</title>
+<style>
+  :root {
+    --green: #1a6b3a;
+    --green-light: #d4edda;
+    --green-mid: #2d9b5a;
+    --red: #c53030;
+    --red-light: #fff5f5;
+    --orange: #c05621;
+    --orange-light: #fffaf0;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-400: #9ca3af;
+    --gray-600: #4b5563;
+    --gray-800: #1f2937;
+    --slide-w: 1280px;
+    --slide-h: 720px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+    background: #111827;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+  }
+
+  /* ─── 슬라이드 기본 ─── */
+  .screen-section {
+    width: var(--slide-w);
+    height: var(--slide-h);
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  /* ─── 헤더 ─── */
+  .sl-header {
+    background: var(--green);
+    color: #fff;
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  .sl-id {
+    background: rgba(255,255,255,0.2);
+    border-radius: 5px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .sl-title { font-size: 20px; font-weight: 700; }
+  .sl-url { margin-left: auto; font-size: 12px; opacity: 0.75; font-family: Consolas, monospace; }
+  .sl-platform { background: rgba(255,255,255,0.15); border-radius: 4px; padding: 3px 10px; font-size: 11px; white-space: nowrap; }
+
+  /* ─── 바디 ─── */
+  .sl-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ─── 왼쪽: 와이어프레임 패널 ─── */
+  .wf-panel {
+    width: 400px;
+    flex-shrink: 0;
+    background: var(--gray-50);
+    border-right: 1px solid var(--gray-200);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .wf-panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .wf-screens {
+    display: flex;
+    gap: 12px;
+    flex: 1;
+    align-items: flex-start;
+  }
+
+  /* ─── 모바일 와이어프레임 (단순 박스) ─── */
+  .wf-mobile {
+    width: 174px;
+    flex-shrink: 0;
+    border: 2px solid var(--gray-800);
+    border-radius: 14px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+  .wf-mobile-label {
+    background: var(--gray-800);
+    color: white;
+    font-size: 9px;
+    text-align: center;
+    padding: 3px 0;
+    border-radius: 10px 10px 0 0;
+    letter-spacing: 0.5px;
+  }
+  .wf-mobile-inner {
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 480px;
+  }
+  .wf-topbar {
+    background: var(--green);
+    color: white;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .wf-block {
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .wf-block-gray   { background: var(--gray-100); border: 1px solid var(--gray-200); color: var(--gray-600); }
+  .wf-block-green  { background: var(--green-light); border: 1px solid var(--green-mid); color: var(--green); }
+  .wf-block-red    { background: #fee2e2; border: 1px solid #fca5a5; color: var(--red); }
+  .wf-block-white  { background: white; border: 1.5px solid var(--gray-200); color: var(--gray-600); }
+  .wf-block-orange { background: var(--orange-light); border: 1px solid #fed7aa; color: var(--orange); }
+  .wf-block-dark   { background: var(--gray-800); color: white; border-radius: 4px; }
+  .wf-label-tiny   { font-size: 9px; color: var(--gray-400); font-weight: 700; margin-top: 2px; }
+  .wf-tab-row { display: flex; border: 1.5px solid var(--gray-200); border-radius: 4px; overflow: hidden; }
+  .wf-tab-item { flex: 1; padding: 4px; font-size: 10px; text-align: center; background: white; color: var(--gray-600); }
+  .wf-tab-item.on { background: var(--green); color: white; font-weight: 700; }
+  .wf-btn-green { background: var(--green); color: white; border-radius: 4px; padding: 7px 8px; font-size: 10px; font-weight: 700; text-align: center; }
+  .wf-btn-outline { background: white; color: var(--green); border: 1.5px solid var(--green); border-radius: 4px; padding: 7px 8px; font-size: 10px; font-weight: 700; text-align: center; }
+  .wf-btn-red  { background: var(--red); color: white; border-radius: 4px; padding: 7px 8px; font-size: 10px; font-weight: 700; text-align: center; }
+  .wf-btn-gray { background: var(--gray-200); color: var(--gray-400); border-radius: 4px; padding: 7px 8px; font-size: 10px; font-weight: 700; text-align: center; }
+  .wf-input { background: white; border: 1.5px solid var(--gray-200); border-radius: 4px; padding: 5px 7px; font-size: 10px; color: var(--gray-600); }
+  .wf-divider { border-top: 1px solid var(--gray-200); margin: 1px 0; }
+  .wf-nav-row { display: flex; border-top: 1px solid var(--gray-200); margin-top: auto; }
+  .wf-nav-item { flex: 1; padding: 5px 2px; font-size: 9px; text-align: center; color: var(--gray-400); }
+  .wf-nav-item.on { color: var(--green); font-weight: 700; }
+  .wf-sos { background: var(--red); color: white; border-radius: 50%; width: 80px; height: 80px; margin: 8px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; }
+  .wf-map-box { background: #c8e6c9; border: 1px solid #a5d6a7; border-radius: 4px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #2e7d32; font-weight: 600; }
+  .wf-toggle-row { display: flex; align-items: center; gap: 6px; font-size: 10px; padding: 4px 0; }
+  .wf-switch { width: 28px; height: 16px; background: var(--green); border-radius: 8px; flex-shrink: 0; }
+  .wf-invite { background: #f0fdf4; border: 2px dashed var(--green-mid); border-radius: 4px; padding: 8px; text-align: center; font-size: 13px; font-weight: 800; letter-spacing: 4px; color: var(--green); }
+  .wf-chat-left  { background: var(--gray-100); border-radius: 0 6px 6px 6px; padding: 4px 6px; font-size: 9px; line-height: 1.4; max-width: 90%; }
+  .wf-chat-right { background: var(--green); color: white; border-radius: 6px 0 6px 6px; padding: 4px 6px; font-size: 9px; line-height: 1.4; max-width: 90%; margin-left: auto; }
+  .wf-row { display: flex; gap: 4px; align-items: flex-start; }
+  .wf-dot-green { width: 8px; height: 8px; background: var(--green); border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .wf-dot-red   { width: 8px; height: 8px; background: var(--red); border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .wf-dot-gray  { width: 8px; height: 8px; background: var(--gray-400); border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .wf-slider-track { height: 4px; background: var(--gray-200); border-radius: 2px; margin: 4px 0; position: relative; }
+  .wf-slider-fill  { height: 4px; background: var(--green); border-radius: 2px; width: 35%; position: absolute; top: 0; left: 0; }
+  .wf-step-dots { display: flex; gap: 3px; }
+  .wf-step-dot { width: 20px; height: 4px; border-radius: 2px; background: var(--gray-200); }
+  .wf-step-dot.on { background: var(--green); }
+  .wf-overlay { background: rgba(0,0,0,0.85); border-radius: 4px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: auto; }
+  .wf-overlay-num { color: white; font-size: 36px; font-weight: 900; line-height: 1; }
+  .wf-overlay-txt { color: rgba(255,255,255,0.85); font-size: 9px; text-align: center; line-height: 1.4; }
+  .wf-overlay-btn { background: rgba(255,255,255,0.2); color: white; border-radius: 3px; padding: 4px 12px; font-size: 9px; font-weight: 700; }
+
+  /* ─── PC 관리자 와이어프레임 ─── */
+  .wf-pc { border: 2px solid var(--gray-800); border-radius: 6px; background: white; overflow: hidden; width: 100%; }
+  .wf-pc-nav { background: var(--green); color: white; padding: 6px 10px; display: flex; align-items: center; gap: 10px; font-size: 9px; }
+  .wf-pc-nav-logo { font-weight: 800; font-size: 10px; }
+  .wf-pc-nav-item { opacity: 0.7; }
+  .wf-pc-nav-item.on { opacity: 1; font-weight: 700; border-bottom: 1.5px solid white; padding-bottom: 1px; }
+  .wf-pc-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .wf-pc-title { font-size: 11px; font-weight: 700; color: var(--gray-800); }
+  .wf-pc-toolbar { display: flex; gap: 6px; align-items: center; }
+  .wf-pc-search { flex: 1; border: 1px solid var(--gray-200); border-radius: 3px; padding: 4px 8px; font-size: 9px; color: var(--gray-400); }
+  .wf-pc-btn { background: var(--green); color: white; border-radius: 3px; padding: 4px 8px; font-size: 9px; font-weight: 700; }
+  .wf-pc-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+  .wf-pc-table th { background: var(--green); color: white; padding: 4px 6px; text-align: left; }
+  .wf-pc-table td { padding: 4px 6px; border-bottom: 1px solid var(--gray-100); }
+  .wf-pc-table tr:nth-child(even) td { background: var(--gray-50); }
+  .wf-tag { display: inline-block; background: var(--green-light); color: var(--green); border-radius: 3px; padding: 1px 5px; font-size: 9px; font-weight: 700; }
+  .wf-tag-red { background: #fee2e2; color: var(--red); }
+  .wf-tag-orange { background: var(--orange-light); color: var(--orange); }
+  .wf-stat-row { display: flex; gap: 8px; }
+  .wf-stat-card { flex: 1; border: 1px solid var(--gray-200); border-radius: 4px; padding: 6px; text-align: center; }
+  .wf-stat-num { font-size: 16px; font-weight: 800; color: var(--green); }
+  .wf-stat-label { font-size: 8px; color: var(--gray-400); }
+  .wf-chart-bars { display: flex; gap: 4px; align-items: flex-end; height: 50px; padding: 4px; background: var(--gray-50); border-radius: 4px; }
+  .wf-chart-bar { flex: 1; background: var(--green-mid); border-radius: 2px 2px 0 0; }
+
+  /* ─── 오른쪽: 정보 패널 ─── */
+  .info-panel {
+    flex: 1;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  /* 메타 행 */
+  .meta-row { display: flex; gap: 8px; flex-shrink: 0; }
+  .meta-chip {
+    background: var(--gray-100);
+    border-left: 3px solid var(--green-mid);
+    border-radius: 0 4px 4px 0;
+    padding: 4px 10px;
+    font-size: 11px;
+    flex: 1;
+  }
+  .meta-chip .k { font-size: 10px; color: var(--gray-400); font-weight: 700; text-transform: uppercase; }
+  .meta-chip .v { font-weight: 600; color: var(--gray-800); margin-top: 1px; font-size: 11px; }
+
+  /* 컴포넌트 테이블 */
+  .comp-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gray-800);
+    border-bottom: 2px solid var(--green);
+    padding-bottom: 4px;
+    flex-shrink: 0;
+  }
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .comp-table th {
+    background: var(--green);
+    color: white;
+    padding: 5px 10px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .comp-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: top;
+    line-height: 1.4;
+    color: var(--gray-600);
+  }
+  .comp-table tr:nth-child(even) td { background: var(--gray-50); }
+  .comp-name { font-weight: 700; color: var(--green); }
+  .comp-type {
+    display: inline-block;
+    background: var(--green-light);
+    color: var(--green);
+    border-radius: 3px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* 예외 처리 */
+  .exc-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gray-800);
+    border-bottom: 2px solid var(--orange);
+    padding-bottom: 4px;
+    flex-shrink: 0;
+  }
+  .exc-box {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    border-radius: 0 4px 4px 0;
+    padding: 6px 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--gray-600);
+  }
+  .exc-box strong { display: block; color: var(--orange); font-size: 10px; text-transform: uppercase; margin-bottom: 2px; }
+
+  /* 푸터 */
+  .sl-footer {
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+    padding: 6px 32px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--gray-400);
+    flex-shrink: 0;
+    height: 28px;
+    align-items: center;
+  }
+
+  /* ─── 표지 ─── */
+  .cover-slide {
+    width: var(--slide-w);
+    height: var(--slide-h);
+    background: var(--green);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-shrink: 0;
+  }
+  .cover-logo { color: white; font-size: 56px; font-weight: 900; text-align: center; }
+  .cover-logo span { color: #a8edbc; }
+  .cover-sub { color: rgba(255,255,255,0.75); font-size: 18px; }
+  .cover-title { color: white; font-size: 40px; font-weight: 700; text-align: center; }
+  .cover-badge { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 6px; padding: 6px 20px; font-size: 14px; }
+  .cover-meta { display: flex; gap: 24px; }
+  .cover-chip { background: rgba(255,255,255,0.12); border-radius: 8px; padding: 14px 24px; text-align: center; color: white; min-width: 140px; }
+  .cover-chip .cv { font-size: 22px; font-weight: 800; }
+  .cover-chip .ck { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+  .cover-btns { display: flex; gap: 10px; }
+  .cover-btn { background: white; color: var(--green); border-radius: 6px; padding: 10px 24px; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+  /* ─── 목차 슬라이드 ─── */
+  .toc-slide {
+    width: var(--slide-w);
+    height: var(--slide-h);
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .toc-header {
+    background: var(--green);
+    color: white;
+    padding: 0 40px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .toc-body {
+    flex: 1;
+    padding: 24px 40px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    align-content: start;
+  }
+  .toc-card {
+    background: var(--gray-50);
+    border-radius: 6px;
+    padding: 12px 14px;
+    border-left: 3px solid var(--green-mid);
+  }
+  .toc-card-id   { font-size: 10px; color: var(--gray-400); font-weight: 700; letter-spacing: 1px; }
+  .toc-card-name { font-size: 13px; font-weight: 700; color: var(--gray-800); margin: 3px 0; }
+  .toc-card-url  { font-size: 10px; color: var(--gray-400); font-family: Consolas, monospace; }
+  .toc-badges    { display: flex; gap: 4px; margin-top: 6px; }
+  .badge { display: inline-block; border-radius: 3px; padding: 2px 7px; font-size: 10px; font-weight: 700; }
+  .badge-p0 { background: #fee2e2; color: var(--red); }
+  .badge-p1 { background: #fef3c7; color: #92400e; }
+  .badge-p2 { background: #dbeafe; color: #1e40af; }
+  .badge-mob { background: var(--green-light); color: var(--green); }
+  .badge-pc  { background: #ede9fe; color: #5b21b6; }
+
+  .download-btns { display: flex; gap: 10px; }
+</style>
+</head>
+<body>
+
+<!-- 표지 -->
+<div class="cover-slide">
+  <div class="cover-logo">💚 안심<span>맵</span></div>
+  <div class="cover-sub">AnsimMap — 부모님 위치 확인 서비스</div>
+  <div class="cover-title">화면설계서 (UI Screen Design)</div>
+  <div class="cover-badge">DOC-09 · v1.0 · 2026-05-31</div>
+  <div class="cover-meta">
+    <div class="cover-chip"><div class="cv">12개</div><div class="ck">총 화면 수</div></div>
+    <div class="cover-chip"><div class="cv">모바일 + PC</div><div class="ck">플랫폼</div></div>
+    <div class="cover-chip"><div class="cv">PM</div><div class="ck">작성자</div></div>
+  </div>
+  <div class="download-btns">
+    <button class="cover-btn">📄 PDF</button>
+  </div>
+</div>
+
+<!-- 목차 -->
+<div class="toc-slide">
+  <div class="toc-header">화면 목록 (Screen List)</div>
+  <div class="toc-body">
+    <div class="toc-card"><div class="toc-card-id">SCR-001</div><div class="toc-card-name">로그인 / 회원가입</div><div class="toc-card-url">/login · /register</div><div class="toc-badges"><span class="badge badge-p0">P0</span><span class="badge badge-mob">모바일</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-002</div><div class="toc-card-name">온보딩 플로우 (1~4단계)</div><div class="toc-card-url">/onboarding/step1~4</div><div class="toc-badges"><span class="badge badge-p0">P0</span><span class="badge badge-mob">모바일</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-003</div><div class="toc-card-name">부모님 메인 (SOS)</div><div class="toc-card-url">/parent</div><div class="toc-badges"><span class="badge badge-p0">P0</span><span class="badge badge-mob">모바일</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-004</div><div class="toc-card-name">부모님 설정 화면</div><div class="toc-card-url">/parent/settings</div><div class="toc-badges"><span class="badge badge-p0">P0</span><span class="badge badge-mob">모바일</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-005</div><div class="toc-card-name">가족 그룹 생성 및 참여</div><div class="toc-card-url">/family/group</div><div class="toc-badges"><span class="badge badge-p0">P0</span><span class="badge badge-mob">모바일</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-006</div><div class="toc-card-name">가족 메인 (실시간 지도)</div><div class="toc-card-url">/family</div><div class="toc-badges"><span class="badge badge-p0">P0</span><span class="badge badge-mob">모바일</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-007</div><div class="toc-card-name">위치 이력 조회</div><div class="toc-card-url">/family/history</div><div class="toc-badges"><span class="badge badge-p1">P1</span><span class="badge badge-mob">모바일</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-008</div><div class="toc-card-name">가족 채팅방</div><div class="toc-card-url">/family/chat</div><div class="toc-badges"><span class="badge badge-p1">P1</span><span class="badge badge-mob">모바일</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-009</div><div class="toc-card-name">안전 구역 설정 (지오펜싱)</div><div class="toc-card-url">/family/geofence</div><div class="toc-badges"><span class="badge badge-p2">P2</span><span class="badge badge-mob">모바일</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-010</div><div class="toc-card-name">[관리자] 회원·그룹 목록</div><div class="toc-card-url">/admin/groups</div><div class="toc-badges"><span class="badge badge-p0">P0</span><span class="badge badge-pc">PC</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-011</div><div class="toc-card-name">[관리자] SMS·알림톡 발송</div><div class="toc-card-url">/admin/sms</div><div class="toc-badges"><span class="badge badge-p1">P1</span><span class="badge badge-pc">PC</span></div></div>
+    <div class="toc-card"><div class="toc-card-id">SCR-012</div><div class="toc-card-name">[관리자] 통계 대시보드</div><div class="toc-card-url">/admin/stats</div><div class="toc-badges"><span class="badge badge-p2">P2</span><span class="badge badge-pc">PC</span></div></div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>DOC-09 · 2026-05-31</span></div>
+</div>
+
+<!-- SCR-001 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-001</span>
+    <span class="sl-title">로그인 / 회원가입</span>
+    <span class="sl-platform">모바일 웹</span>
+    <span class="sl-url">/login · /register</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-screens">
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">로그인 탭</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-block wf-block-gray" style="text-align:center;font-weight:900;font-size:13px;color:#1a6b3a;">💚 안심맵</div>
+            <div class="wf-label-tiny">TAB BAR</div>
+            <div class="wf-tab-row"><div class="wf-tab-item on">로그인</div><div class="wf-tab-item">회원가입</div></div>
+            <div class="wf-label-tiny">INPUT — 휴대폰 번호</div>
+            <div class="wf-input">010-1234-5678</div>
+            <div class="wf-btn-green">시작하기 (로그인)</div>
+          </div>
+        </div>
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">회원가입 탭</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-block wf-block-gray" style="text-align:center;font-weight:900;font-size:13px;color:#1a6b3a;">💚 안심맵</div>
+            <div class="wf-tab-row"><div class="wf-tab-item">로그인</div><div class="wf-tab-item on">회원가입</div></div>
+            <div class="wf-input">010-____-____</div>
+            <div class="wf-label-tiny">RADIO — 역할 선택</div>
+            <div class="wf-block wf-block-green">⦿ 부모님 &nbsp;&nbsp; ○ 가족 자녀</div>
+            <div class="wf-label-tiny">CHECKBOX — 약관 동의</div>
+            <div class="wf-block wf-block-white">☑ [필수] 개인정보처리방침 동의</div>
+            <div class="wf-btn-gray">시작하기 (비활성)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">비로그인 사용자</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-001, F-002, F-007, F-028</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">POST /api/auth/login · /register</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">로그인/회원가입 탭</td><td><span class="comp-type">TabBar</span></td><td>탭 시 하단 폼 노출 여부 토글</td></tr>
+        <tr><td class="comp-name">휴대폰 번호 입력</td><td><span class="comp-type">TextInput</span></td><td>숫자만 허용, 010-XXXX-XXXX 자동 포맷</td></tr>
+        <tr><td class="comp-name">역할 선택</td><td><span class="comp-type">RadioGroup</span></td><td>부모님 / 가족 자녀 단일 선택</td></tr>
+        <tr><td class="comp-name">개인정보 동의</td><td><span class="comp-type">Checkbox</span></td><td>미체크 시 CTA 버튼 비활성화</td></tr>
+        <tr><td class="comp-name">시작하기 버튼</td><td><span class="comp-type">Button (CTA)</span></td><td>검증 후 API 호출, 성공 시 온보딩 이동</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>동의 미체크 상태</strong>회원가입 모드에서 약관 미체크 시 '시작하기' 버튼이 bg-gray-300으로 비활성화 및 클릭 차단</div>
+      <div class="exc-box"><strong>미가입 번호 로그인 시도</strong>"등록되지 않은 번호입니다. 회원가입 탭을 클릭하여 가입해 주세요." 경고 토스트 팝업 표시</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-001 로그인/회원가입 · DOC-09</span></div>
+</div>
+
+<!-- SCR-002 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-002</span>
+    <span class="sl-title">온보딩 플로우 (1~4단계)</span>
+    <span class="sl-platform">모바일 웹</span>
+    <span class="sl-url">/onboarding/step1~4</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-screens">
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">Step 2 — 그룹 참여</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-topbar"><span>안심맵 온보딩</span><span>2 / 4</span></div>
+            <div class="wf-step-dots"><div class="wf-step-dot on"></div><div class="wf-step-dot on"></div><div class="wf-step-dot"></div><div class="wf-step-dot"></div></div>
+            <div class="wf-block wf-block-gray">자녀 휴대폰에 표시된 가족 초대 코드를 입력해 주세요.</div>
+            <div class="wf-label-tiny">INPUT — 초대 코드 (6자리)</div>
+            <div class="wf-input" style="letter-spacing:5px;font-weight:800;font-size:13px;text-align:center;">A B C D E F</div>
+            <div class="wf-btn-green">다음 단계로</div>
+          </div>
+        </div>
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">Step 3 — 위치정보 동의</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-topbar"><span>안심맵 온보딩</span><span>3 / 4</span></div>
+            <div class="wf-step-dots"><div class="wf-step-dot on"></div><div class="wf-step-dot on"></div><div class="wf-step-dot on"></div><div class="wf-step-dot"></div></div>
+            <div class="wf-block wf-block-orange">⚠ 부모님 직접 조작 필수 — 대리 동의 법적 처벌 대상</div>
+            <div class="wf-label-tiny">CHECKBOX (필수)</div>
+            <div class="wf-block wf-block-green">☑ [필수] 위치정보 수집·이용·제3자 제공 동의</div>
+            <div class="wf-block wf-block-white">☐ [선택] 혜택 및 알림 수신 동의</div>
+            <div class="wf-btn-green">위치 공유 시작하기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">role=parent · 온보딩 미완료</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-005, F-001, F-004, F-006</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">POST /api/groups/join · /location/consent</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">초대 코드 입력창</td><td><span class="comp-type">TextInput</span></td><td>대문자 영문+숫자, 완료 시 버튼 활성화</td></tr>
+        <tr><td class="comp-name">위치정보 동의 체크박스</td><td><span class="comp-type">Checkbox</span></td><td>필수 동의 체크 시에만 '위치 공유 시작하기' 활성화</td></tr>
+        <tr><td class="comp-name">대리 조작 방지 경고</td><td><span class="comp-type">Callout</span></td><td>주황색 경고 테두리, 부모님 직접 조작 유도</td></tr>
+        <tr><td class="comp-name">시작하기 버튼</td><td><span class="comp-type">Button</span></td><td>탭 시 navigator.geolocation 권한 요청 모달 트리거</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>중간 이탈 처리</strong>진행 단계를 localStorage에 저장, 재진입 시 끊긴 단계부터 즉시 재개</div>
+      <div class="exc-box"><strong>브라우저 위치 권한 거부</strong>온보딩 완료 후 부모님 메인 최상단에 "위치 권한 꺼짐: 활성화 방법 보기" 가이드 배너 표시</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-002 온보딩 플로우 · DOC-09</span></div>
+</div>
+
+<!-- SCR-003 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-003</span>
+    <span class="sl-title">부모님 메인 화면 (SOS)</span>
+    <span class="sl-platform">모바일 웹 — 시니어 최적화</span>
+    <span class="sl-url">/parent</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-screens">
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">평시 메인 화면</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-topbar"><span>💚 안심맵</span><span>⚙</span></div>
+            <div class="wf-block wf-block-green"><div class="wf-row"><div class="wf-dot-green"></div><div><strong>위치 전송 중</strong><br>가족이 내 위치를 보고 있어요</div></div></div>
+            <div class="wf-label-tiny">BUTTON (대형) — SOS 긴급 호출</div>
+            <div class="wf-sos">SOS<span style="font-size:9px;font-weight:600;">긴급 호출</span></div>
+            <div class="wf-block wf-block-gray" style="font-size:9px;text-align:center;">위급할 때 버튼을 누르면<br>가족 모두에게 알림이 갑니다.</div>
+            <div class="wf-divider"></div>
+            <div class="wf-label-tiny">TOGGLE — 실시간 위치 공유</div>
+            <div class="wf-toggle-row"><div class="wf-switch"></div><span>실시간 위치 공유 중<br><span style="font-size:9px;color:#9ca3af;">켜짐 · 30초마다 전송</span></span></div>
+          </div>
+        </div>
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">SOS 카운트다운 오버레이</div>
+          <div class="wf-mobile-inner" style="justify-content:center;">
+            <div class="wf-overlay">
+              <div class="wf-block wf-block-red" style="width:100%;text-align:center;font-weight:700;">🚨 긴급 상황</div>
+              <div class="wf-overlay-num">2</div>
+              <div class="wf-overlay-txt">가족들에게 SOS 알림과<br>현재 위치를 전송합니다.</div>
+              <div class="wf-overlay-btn">발송 취소</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">role=parent · 온보딩 완료</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-009, F-010, F-014, F-015, F-016</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">POST /api/location · /api/sos</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">SOS 긴급 호출 버튼</td><td><span class="comp-type">LargeButton</span></td><td>1회 터치 시 카운트다운 오버레이 즉시 표시</td></tr>
+        <tr><td class="comp-name">위치 공유 토글</td><td><span class="comp-type">ToggleSwitch</span></td><td>변경 시 GPS 수집 활성/비활성 + 가족 알림 푸시</td></tr>
+        <tr><td class="comp-name">SOS 카운트다운 타이머</td><td><span class="comp-type">Text</span></td><td>2초 맥박 애니메이션, 0초에 SOS 발송</td></tr>
+        <tr><td class="comp-name">발송 취소 버튼</td><td><span class="comp-type">Button</span></td><td>탭 시 오버레이 닫고 평시 메인 복귀</td></tr>
+        <tr><td class="comp-name">설정 바로가기 (⚙)</td><td><span class="comp-type">IconButton</span></td><td>클릭 시 /parent/settings 이동</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>백그라운드 차단 방지 (iOS)</strong>Safari 화면 닫으면 포그라운드 유지 팝업 + PWA 홈 화면 설치 권장 안내 지속 노출</div>
+      <div class="exc-box"><strong>SOS 발송 완료</strong>전체 화면 어두워짐 + "가족에게 긴급 알림을 보냈습니다." 토스트 + 사이렌 진동 3초</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-003 부모님 메인 (SOS) · DOC-09</span></div>
+</div>
+
+<!-- SCR-004 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-004</span>
+    <span class="sl-title">부모님 설정 화면</span>
+    <span class="sl-platform">모바일 웹</span>
+    <span class="sl-url">/parent/settings</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-screens">
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">설정 화면</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-topbar"><span>← 설정</span></div>
+            <div class="wf-label-tiny">SECTION — 배터리 절약 모드</div>
+            <div class="wf-block wf-block-white">☑ 배터리 절약 모드 켜기<br><span style="font-size:9px;color:#9ca3af;">위치 전송 주기가 3분으로 늘어납니다.</span></div>
+            <div class="wf-divider"></div>
+            <div class="wf-label-tiny">SECTION — 법률 및 개인정보</div>
+            <div class="wf-block wf-block-white">개인정보처리방침 열람 ›</div>
+            <div class="wf-block wf-block-white">위치기반서비스 이용약관 ›</div>
+            <div class="wf-divider"></div>
+            <div class="wf-label-tiny">DANGER ZONE — 동의 철회</div>
+            <div class="wf-block wf-block-red" style="font-size:9px;">위치 정보 수집 동의를 철회합니다.</div>
+            <div class="wf-btn-red">위치 공유 동의 철회</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">로그인 완료 · role=parent</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-008, F-027, F-028</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">DELETE /api/location/consent · PATCH /api/users/me</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">배터리 절약 모드</td><td><span class="comp-type">Checkbox/Toggle</span></td><td>체크 시 location_interval 30초 → 180초로 변경</td></tr>
+        <tr><td class="comp-name">약관·방침 메뉴</td><td><span class="comp-type">NavigationLink</span></td><td>탭 시 /privacy 정적 페이지로 전체 화면 이동</td></tr>
+        <tr><td class="comp-name">위치 공유 동의 철회</td><td><span class="comp-type">Button (Danger)</span></td><td>탭 시 "정말 철회하시겠습니까?" 확인 모달 트리거</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>동의 철회 수락 시</strong>GPS 수집 스케줄러 즉시 정지 → /onboarding/step3 리다이렉트. 동시에 자녀들에게 "위치 정보 제공 동의 철회" 푸시 알림 즉시 발송</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-004 부모님 설정 · DOC-09</span></div>
+</div>
+
+<!-- SCR-005 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-005</span>
+    <span class="sl-title">가족 그룹 생성 및 참여</span>
+    <span class="sl-platform">모바일 웹</span>
+    <span class="sl-url">/family/group</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-screens">
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">그룹 선택 화면</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-topbar">안심맵 가족 그룹 설정</div>
+            <div class="wf-block wf-block-gray">서비스를 시작하기 위해 그룹을 선택하거나 새로 만드세요.</div>
+            <div class="wf-btn-green">새로운 가족 그룹 생성</div>
+            <div class="wf-block wf-block-gray" style="text-align:center;color:#9ca3af;">— 또는 —</div>
+            <div class="wf-btn-outline">초대 코드로 그룹 참여</div>
+          </div>
+        </div>
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">그룹 생성 완료</div>
+          <div class="wf-mobile-inner" style="align-items:center;text-align:center;">
+            <div class="wf-block wf-block-green" style="width:100%;font-size:13px;font-weight:800;">🎉 그룹 생성이 완료되었습니다!</div>
+            <div class="wf-block wf-block-gray">부모님과 다른 가족 자녀를 초대해 보세요.</div>
+            <div class="wf-label-tiny">초대 코드 (6자리)</div>
+            <div class="wf-invite">K O E L 9 2</div>
+            <div class="wf-block wf-block-gray" style="width:60%;text-align:center;">[ QR 코드 ]</div>
+            <div class="wf-btn-green" style="width:100%;">지도 보러가기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">role=family · 그룹 미참여</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-003, F-004</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">POST /api/groups · /api/groups/join</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">새 그룹 생성 버튼</td><td><span class="comp-type">Button</span></td><td>탭 시 그룹명 입력 → 6자리 초대코드+QR 자동 생성</td></tr>
+        <tr><td class="comp-name">그룹 참여 버튼</td><td><span class="comp-type">Button</span></td><td>탭 시 6자리 코드 입력 + QR 스캐너 활성화</td></tr>
+        <tr><td class="comp-name">초대 코드 복사 영역</td><td><span class="comp-type">TextBlock</span></td><td>터치 시 "클립보드에 복사됨" 토스트 알림</td></tr>
+        <tr><td class="comp-name">지도 보러가기 버튼</td><td><span class="comp-type">Button</span></td><td>탭 시 /family 실시간 맵 화면으로 즉시 이동</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>그룹 정원 초과 오류</strong>Free 플랜 최대 5명 초과 시 인풋 하단 빨간 인라인 에러 "그룹 인원 한도(5명)를 초과하여 진입할 수 없습니다."</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-005 가족 그룹 생성·참여 · DOC-09</span></div>
+</div>
+
+<!-- SCR-006 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-006</span>
+    <span class="sl-title">가족 메인 화면 (실시간 지도)</span>
+    <span class="sl-platform">모바일 웹 — 가족 핵심 대시보드</span>
+    <span class="sl-url">/family</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-screens">
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">실시간 지도 메인</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-topbar"><span>💚 안심맵</span><span>⚙</span></div>
+            <div class="wf-map-box">카카오맵 · 👵 부모님 마커</div>
+            <div class="wf-label-tiny">CARD — 위치 요약</div>
+            <div class="wf-block wf-block-white">
+              <strong>👵 홍길순 (어머니)</strong><br>
+              📍 서울시 마포구 창전동 12-4<br>
+              🔋 배터리 78% · 30초 전 갱신
+            </div>
+            <div class="wf-nav-row">
+              <div class="wf-nav-item on">📍 지도</div>
+              <div class="wf-nav-item">📅 이동기록</div>
+              <div class="wf-nav-item">💬 채팅</div>
+            </div>
+          </div>
+        </div>
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">SOS 수신 모달</div>
+          <div class="wf-mobile-inner" style="justify-content:center;">
+            <div class="wf-overlay" style="padding:12px;">
+              <div class="wf-block wf-block-red" style="width:100%;text-align:center;font-weight:700;font-size:11px;">🚨 SOS 긴급 상황 발생!!</div>
+              <div style="color:white;font-size:10px;padding:4px 0;text-align:center;line-height:1.6;">👵 홍길순 어르신이 도움을 요청하셨습니다!<br>위치: 서울시 마포구 창전동...</div>
+              <div class="wf-btn-green" style="width:100%;margin-top:4px;background:#16a34a;">전화로 직접 연결하기</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">role=family · 그룹 참여 완료</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-011, F-013, F-017</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">GET /api/location/current · /address</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">카카오맵 뷰포트</td><td><span class="comp-type">MapArea</span></td><td>드래그·핀치 줌. WebSocket 좌표 수신 시 마커 애니메이션 이동</td></tr>
+        <tr><td class="comp-name">부모님 위치 마커</td><td><span class="comp-type">MapMarker</span></td><td>마커 탭 시 상세 요약 정보 오버레이 카드 토글</td></tr>
+        <tr><td class="comp-name">위치 요약 카드</td><td><span class="comp-type">Card</span></td><td>역지오코딩 API → 위경도를 실시간 텍스트 주소로 변환</td></tr>
+        <tr><td class="comp-name">SOS 수신 긴급 모달</td><td><span class="comp-type">Modal</span></td><td>전체 화면 적색 모달 + 진동음, 전화 연결 버튼 포함</td></tr>
+        <tr><td class="comp-name">하단 내비게이션 바</td><td><span class="comp-type">BottomNav</span></td><td>지도 / 이동기록 / 채팅 탭 간 라우팅</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>위치 공유 비활성화</strong>마커 회색 처리 + 최상단 배너 "부모님이 위치 공유를 꺼두셨습니다." 상시 고정</div>
+      <div class="exc-box"><strong>위치 신호 5분 단절</strong>마커 위에 "수신 신호 없음" 경고 배지 추가</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-006 가족 메인 (지도) · DOC-09</span></div>
+</div>
+
+<!-- SCR-007 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-007</span>
+    <span class="sl-title">위치 이력 조회</span>
+    <span class="sl-platform">모바일 웹</span>
+    <span class="sl-url">/family/history</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-screens">
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">이동 기록 조회</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-topbar"><span>← 이동 기록 조회</span></div>
+            <div class="wf-label-tiny">DATEPICKER — 날짜 선택</div>
+            <div class="wf-block wf-block-white" style="display:flex;justify-content:space-between;"><span>2026년 05월 31일</span><span>▼</span></div>
+            <div class="wf-map-box" style="height:75px;">카카오맵 · 🟢 → 🔴 폴리라인</div>
+            <div class="wf-label-tiny">SCROLLLIST — 시간대별 이동 이력</div>
+            <div class="wf-block wf-block-white"><div class="wf-row"><div class="wf-dot-green"></div><div><strong>10:20</strong> 마포구 신촌로 12 (출발)</div></div></div>
+            <div class="wf-block wf-block-white"><div class="wf-row"><div class="wf-dot-gray"></div><div><strong>11:15</strong> 창전동 현대아파트 앞</div></div></div>
+            <div class="wf-block wf-block-white"><div class="wf-row"><div class="wf-dot-red"></div><div><strong>12:00</strong> 마포노인복지관 (도착)</div></div></div>
+            <div class="wf-nav-row">
+              <div class="wf-nav-item">📍 지도</div>
+              <div class="wf-nav-item on">📅 이동기록</div>
+              <div class="wf-nav-item">💬 채팅</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">role=family · 그룹 참여 완료</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-012, F-013</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">GET /api/location/history</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">날짜 선택 드롭다운</td><td><span class="comp-type">DatePicker</span></td><td>최대 7일 전까지 선택, 해당 일자 이력 비동기 조회 및 리렌더링</td></tr>
+        <tr><td class="comp-name">이동 경로 폴리라인</td><td><span class="comp-type">MapPolyline</span></td><td>경로 궤적 렌더링, 출발(녹색)·도착(적색) 마커 구분 표시</td></tr>
+        <tr><td class="comp-name">시간대별 경로 목록</td><td><span class="comp-type">ScrollList</span></td><td>행 클릭 시 해당 시간대 지도 위치로 뷰포트 포커스 이동</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>데이터 없는 날짜 선택</strong>"선택하신 날짜의 위치 이동 이력이 없습니다." 빈 상태 일러스트 + 텍스트 표시</div>
+      <div class="exc-box"><strong>100건 초과 데이터</strong>브라우저 과부하 방지를 위해 5분 단위 데이터로 자동 다운샘플링하여 폴리라인 드로잉</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-007 위치 이력 조회 · DOC-09</span></div>
+</div>
+
+<!-- SCR-008 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-008</span>
+    <span class="sl-title">가족 채팅방</span>
+    <span class="sl-platform">모바일 웹 — WebSocket 양방향</span>
+    <span class="sl-url">/family/chat</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-screens">
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">채팅방 화면</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-topbar"><span>← 가족 그룹 채팅방</span><span>⚙</span></div>
+            <div class="wf-block wf-block-gray" style="text-align:center;font-size:9px;color:#9ca3af;">2026년 05월 31일 일요일</div>
+            <div class="wf-label-tiny">MESSAGE — 왼쪽 (수신)</div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <div style="font-size:9px;color:#9ca3af;">👵 어머니</div>
+              <div class="wf-chat-left">얘들아 나 복지관 도착했다. 걱정 마라. <span style="color:#9ca3af;">12:02</span></div>
+            </div>
+            <div class="wf-label-tiny">MESSAGE — 오른쪽 (발신)</div>
+            <div style="display:flex;justify-content:flex-end;">
+              <div class="wf-chat-right">네 확인했어요! 무리하지 마세요 <span style="opacity:0.7;">12:04 읽음</span></div>
+            </div>
+            <div class="wf-chat-input">
+              <div class="wf-chat-text" style="flex:1;border:1px solid #e5e7eb;border-radius:4px;padding:4px 6px;font-size:9px;color:#9ca3af;">안부 메시지를 입력하세요</div>
+              <div class="wf-chat-send" style="background:#1a6b3a;color:white;border-radius:4px;padding:4px 8px;font-size:9px;font-weight:700;">전송</div>
+            </div>
+            <div class="wf-nav-row">
+              <div class="wf-nav-item">📍 지도</div>
+              <div class="wf-nav-item">📅 이동기록</div>
+              <div class="wf-nav-item on">💬 채팅</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">role=family 또는 parent · 그룹 참여</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-018, F-019</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">WebSocket /ws · GET /api/chat/:groupId</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">채팅 메시지 윈도우</td><td><span class="comp-type">MessageWindow</span></td><td>양방향 스크롤, 새 메시지 수신 시 최하단 자동 앵커 스크롤</td></tr>
+        <tr><td class="comp-name">메시지 입력창</td><td><span class="comp-type">TextInput</span></td><td>최대 500자, 포커스 시 소프트 키보드 + 레이아웃 상단 밀어올림</td></tr>
+        <tr><td class="comp-name">전송 버튼</td><td><span class="comp-type">Button</span></td><td>터치 즉시 소켓 emit, 성공 후 입력창 공백 초기화</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>WebSocket 연결 차단</strong>헤더 하단 노란 경고띠 "서버와 대화방 연결이 끊겼습니다. 재연결 중..." + exponential backoff 최대 5회 자동 복구</div>
+      <div class="exc-box"><strong>미접속자 푸시 자동 트리거</strong>오프라인/다른 탭의 자녀에게 서버사이드 FCM 새 메시지 미리보기 알림 자동 즉시 발송</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-008 가족 채팅방 · DOC-09</span></div>
+</div>
+
+<!-- SCR-009 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-009</span>
+    <span class="sl-title">안전 구역 설정 (지오펜싱)</span>
+    <span class="sl-platform">모바일 웹</span>
+    <span class="sl-url">/family/geofence</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-screens">
+        <div class="wf-mobile">
+          <div class="wf-mobile-label">안전 구역 설정</div>
+          <div class="wf-mobile-inner">
+            <div class="wf-topbar"><span>← 안전 구역 설정</span></div>
+            <div class="wf-map-box" style="height:100px;">카카오맵<br>🔵 반투명 안전 구역 원 · 📍 중심점</div>
+            <div class="wf-label-tiny">INPUT — 구역 이름</div>
+            <div class="wf-input">마포 노인복지관</div>
+            <div class="wf-label-tiny">SLIDER — 반경 설정 (100m ~ 5km) · 현재 500m</div>
+            <div class="wf-slider-track"><div class="wf-slider-fill"></div></div>
+            <div class="wf-block wf-block-gray" style="display:flex;justify-content:space-between;font-size:9px;"><span>100m</span><span style="font-weight:700;color:#1a6b3a;">500m</span><span>5km</span></div>
+            <div class="wf-btn-green">안전 구역 저장</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">role=family · 그룹 참여 완료</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-020, F-021</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">POST /api/geofence · GET /api/geofence/:groupId</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">중심점 타겟 마커</td><td><span class="comp-type">MapMarker</span></td><td>지도 터치 지점으로 마커 순간 이동, 정밀 좌표 캡처</td></tr>
+        <tr><td class="comp-name">반투명 반경 원</td><td><span class="comp-type">MapCircle</span></td><td>슬라이더와 동기화, 원의 가시 반경 실시간 확대/축소</td></tr>
+        <tr><td class="comp-name">반경 조정 슬라이더</td><td><span class="comp-type">RangeSlider</span></td><td>100m~5km, 50m 스텝 단위 부드러운 조정 지원</td></tr>
+        <tr><td class="comp-name">저장 버튼</td><td><span class="comp-type">Button</span></td><td>좌표+반경 서버 전달, 성공 시 메인 지도로 복귀</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>Free 플랜 저장 한도 초과</strong>1개 이미 존재 시 "Free 플랜에서는 최대 1개까지 등록할 수 있습니다. Pro 플랜으로 업그레이드하시겠습니까?" 팝업으로 결제 전환 유도</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-009 안전 구역 설정 · DOC-09</span></div>
+</div>
+
+<!-- SCR-010 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-010</span>
+    <span class="sl-title">[관리자] 회원 및 그룹 목록</span>
+    <span class="sl-platform">PC 웹 (1920px)</span>
+    <span class="sl-url">/admin/groups</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel" style="width:520px;">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-pc">
+        <div class="wf-pc-nav">
+          <span class="wf-pc-nav-logo">💚 안심맵 관리자</span>
+          <span class="wf-pc-nav-item on">회원·그룹 관리</span>
+          <span class="wf-pc-nav-item">SMS/알림톡</span>
+          <span class="wf-pc-nav-item">통계 대시보드</span>
+          <span style="margin-left:auto;opacity:0.7;font-size:9px;">로그아웃</span>
+        </div>
+        <div class="wf-pc-body">
+          <div class="wf-pc-title">그룹 및 회원 통합 목록</div>
+          <div class="wf-pc-toolbar">
+            <div class="wf-pc-search">검색어를 입력하세요...</div>
+            <div class="wf-pc-btn">최신 생성일순 ▼</div>
+            <div class="wf-pc-btn">엑셀 다운로드</div>
+          </div>
+          <table class="wf-pc-table">
+            <tr><th>그룹 ID</th><th>그룹명</th><th>생성일</th><th>소유주</th><th>부모님(상태)</th><th>구성원</th><th>마지막 연결</th></tr>
+            <tr><td><span class="wf-tag">G-0102</span></td><td>마포구 홍길동가</td><td>2026-05-30</td><td>홍재민</td><td>홍길순 <span class="wf-tag">ON</span></td><td>4명</td><td>3초 전</td></tr>
+            <tr><td><span class="wf-tag">G-0089</span></td><td>양천구 이정우가</td><td>2026-05-28</td><td>이경우</td><td>김순희 <span class="wf-tag wf-tag-orange">OFF</span></td><td>3명</td><td>2시간 전</td></tr>
+            <tr><td><span class="wf-tag">G-0045</span></td><td>서대문구 박가네</td><td>2026-05-25</td><td>박진희</td><td>박용식 <span class="wf-tag wf-tag-red">철회</span></td><td>2명</td><td>3일 전</td></tr>
+          </table>
+          <div style="display:flex;gap:3px;justify-content:center;padding:6px 0;">
+            <div style="width:20px;height:20px;border:1px solid #e5e7eb;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;">«</div>
+            <div style="width:20px;height:20px;border:1px solid #e5e7eb;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;">1</div>
+            <div style="width:20px;height:20px;background:#1a6b3a;color:white;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;">2</div>
+            <div style="width:20px;height:20px;border:1px solid #e5e7eb;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;">3</div>
+            <div style="width:20px;height:20px;border:1px solid #e5e7eb;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;">»</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">로그인 완료 · role=admin</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-022, F-023</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">GET /api/admin/groups · /:id</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">통합 검색 바</td><td><span class="comp-type">TextInput</span></td><td>키워드 입력+엔터 시 목록 테이블 실시간 필터링</td></tr>
+        <tr><td class="comp-name">정렬 셀렉터</td><td><span class="comp-type">Dropdown</span></td><td>옵션 변경 시 쿼리 매개변수 업데이트 → 데이터 재정렬</td></tr>
+        <tr><td class="comp-name">그룹 관리 테이블</td><td><span class="comp-type">DataGridTable</span></td><td>행 클릭 시 상세 구성원 명부 카드 팝업 활성화</td></tr>
+        <tr><td class="comp-name">페이지네이션 바</td><td><span class="comp-type">Pagination</span></td><td>20건 단위 페이징, 번호 클릭 시 해당 페이지 데이터 로드</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-010 [관리자] 회원·그룹 목록 · DOC-09</span></div>
+</div>
+
+<!-- SCR-011 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-011</span>
+    <span class="sl-title">[관리자] SMS 및 알림톡 발송</span>
+    <span class="sl-platform">PC 웹</span>
+    <span class="sl-url">/admin/sms · /admin/alimtalk</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel" style="width:520px;">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-pc">
+        <div class="wf-pc-nav">
+          <span class="wf-pc-nav-logo">💚 안심맵 관리자</span>
+          <span class="wf-pc-nav-item">회원·그룹 관리</span>
+          <span class="wf-pc-nav-item on">SMS/알림톡</span>
+          <span class="wf-pc-nav-item">통계 대시보드</span>
+          <span style="margin-left:auto;opacity:0.7;font-size:9px;">로그아웃</span>
+        </div>
+        <div class="wf-pc-body">
+          <div class="wf-pc-title">긴급 대고객 메시지 발송 시스템</div>
+          <div style="font-size:10px;font-weight:700;color:#4b5563;margin-bottom:4px;">발송 채널</div>
+          <div style="display:flex;gap:12px;font-size:9px;margin-bottom:8px;">
+            <span style="color:#1a6b3a;font-weight:700;">⦿ 일반 SMS / LMS 문자메시지</span>
+            <span style="color:#9ca3af;">○ 카카오 알림톡 (템플릿 연동)</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <div style="font-size:9px;font-weight:700;color:#4b5563;margin-bottom:3px;">수신 대상 번호 (쉼표로 구분)</div>
+              <div style="border:1px solid #e5e7eb;border-radius:3px;padding:6px;height:60px;font-size:9px;color:#9ca3af;">010-1234-5678,<br>010-9876-5432,</div>
+            </div>
+            <div>
+              <div style="font-size:9px;font-weight:700;color:#4b5563;margin-bottom:3px;">메시지 내용</div>
+              <div style="border:1px solid #e5e7eb;border-radius:3px;padding:6px;height:60px;font-size:9px;color:#4b5563;">[안심맵 공지]<br>서버 정기 점검 예정...</div>
+              <div style="text-align:right;font-size:8px;color:#9ca3af;margin-top:2px;">45 / 90 자</div>
+            </div>
+          </div>
+          <div class="wf-pc-btn" style="margin-top:8px;text-align:center;">즉시 메시지 발송</div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">로그인 완료 · role=admin</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-024, F-025</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">POST /api/admin/sms · /alimtalk</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">발송 채널 선택</td><td><span class="comp-type">RadioGroup</span></td><td>선택 채널에 따라 템플릿+변수 매핑 폼 레이아웃 동적 갱신</td></tr>
+        <tr><td class="comp-name">수신자 리스트 인풋</td><td><span class="comp-type">Textarea</span></td><td>붙여넣기 인식, 번호 단위 유효성 정규식 검사 실시간</td></tr>
+        <tr><td class="comp-name">메시지 바디 본문창</td><td><span class="comp-type">Textarea</span></td><td>실시간 글자수 계산, 90자 초과 시 SMS → LMS 자동 승격</td></tr>
+        <tr><td class="comp-name">발송 실행 버튼</td><td><span class="comp-type">Button</span></td><td>클릭 시 "총 N명에게 발송합니다." 최종 확인창 표시</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-011 [관리자] SMS·알림톡 · DOC-09</span></div>
+</div>
+
+<!-- SCR-012 -->
+<div class="screen-section">
+  <div class="sl-header">
+    <span class="sl-id">SCR-012</span>
+    <span class="sl-title">[관리자] 통계 대시보드</span>
+    <span class="sl-platform">PC 웹</span>
+    <span class="sl-url">/admin/stats</span>
+  </div>
+  <div class="sl-body">
+    <div class="wf-panel" style="width:520px;">
+      <div class="wf-panel-title">와이어프레임</div>
+      <div class="wf-pc">
+        <div class="wf-pc-nav">
+          <span class="wf-pc-nav-logo">💚 안심맵 관리자</span>
+          <span class="wf-pc-nav-item">회원·그룹 관리</span>
+          <span class="wf-pc-nav-item">SMS/알림톡</span>
+          <span class="wf-pc-nav-item on">통계 대시보드</span>
+          <span style="margin-left:auto;opacity:0.7;font-size:9px;">로그아웃</span>
+        </div>
+        <div class="wf-pc-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div class="wf-pc-title">안심맵 서비스 운영 통계</div>
+            <div style="display:flex;gap:4px;align-items:center;font-size:9px;">
+              <span style="border:1px solid #e5e7eb;border-radius:3px;padding:3px 6px;">2026-05-01</span>
+              <span>~</span>
+              <span style="border:1px solid #e5e7eb;border-radius:3px;padding:3px 6px;">2026-05-31</span>
+              <div class="wf-pc-btn">CSV 다운로드</div>
+            </div>
+          </div>
+          <div class="wf-stat-row" style="margin-bottom:8px;">
+            <div class="wf-stat-card">
+              <div style="font-size:8px;color:#9ca3af;margin-bottom:3px;">👥 일일 활성 사용자(DAU)</div>
+              <div class="wf-stat-num">4,890</div>
+              <div class="wf-stat-label">명</div>
+            </div>
+            <div class="wf-stat-card">
+              <div style="font-size:8px;color:#9ca3af;margin-bottom:3px;">🚨 누적 SOS 호출 수</div>
+              <div class="wf-stat-num" style="color:#c53030;">24</div>
+              <div class="wf-stat-label">건</div>
+            </div>
+            <div class="wf-stat-card">
+              <div style="font-size:8px;color:#9ca3af;margin-bottom:3px;">🏡 생성된 가족 그룹 수</div>
+              <div class="wf-stat-num">1,250</div>
+              <div class="wf-stat-label">개</div>
+            </div>
+          </div>
+          <div style="font-size:9px;font-weight:700;color:#4b5563;margin-bottom:4px;">📊 일별 활성 사용자(DAU) 추이</div>
+          <div class="wf-chart-bars">
+            <div class="wf-chart-bar" style="height:45%;"></div>
+            <div class="wf-chart-bar" style="height:60%;"></div>
+            <div class="wf-chart-bar" style="height:72%;"></div>
+            <div class="wf-chart-bar" style="height:88%;"></div>
+            <div class="wf-chart-bar" style="height:78%;"></div>
+            <div class="wf-chart-bar" style="height:95%;"></div>
+            <div class="wf-chart-bar" style="height:68%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:#9ca3af;margin-top:3px;padding:0 2px;">
+            <span>05-01</span><span>05-07</span><span>05-14</span><span>05-21</span><span>05-28</span><span>05-31</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="meta-row">
+        <div class="meta-chip"><div class="k">접근 권한</div><div class="v">로그인 완료 · role=admin</div></div>
+        <div class="meta-chip"><div class="k">관련 기능</div><div class="v">F-026</div></div>
+        <div class="meta-chip"><div class="k">관련 API</div><div class="v">GET /api/admin/stats</div></div>
+      </div>
+      <div class="comp-title">UI 컴포넌트</div>
+      <table class="comp-table">
+        <tr><th>컴포넌트</th><th>타입</th><th>인터랙션</th></tr>
+        <tr><td class="comp-name">운영 핵심 카드 지표</td><td><span class="comp-type">MetricCard</span></td><td>카드 탭 시 해당 지표 상세 추이 그래프로 하단 차트 갱신</td></tr>
+        <tr><td class="comp-name">DAU 추이 차트</td><td><span class="comp-type">ChartArea</span></td><td>마우스 오버 시 일자별 상세 숫자 툴팁 팝업</td></tr>
+        <tr><td class="comp-name">CSV 다운로드 버튼</td><td><span class="comp-type">Button</span></td><td>클릭 시 원시 레코드를 Blob 파일로 즉시 브라우저 다운로드</td></tr>
+      </table>
+      <div class="exc-title">예외 처리 및 상태</div>
+      <div class="exc-box"><strong>조회 기간 데이터 없음</strong>"선택하신 기간의 통계 데이터가 없습니다." 빈 상태 안내 + 기간 재선택 유도</div>
+    </div>
+  </div>
+  <div class="sl-footer"><span>안심맵 화면설계서 v1.0</span><span>SCR-012 [관리자] 통계 대시보드 · DOC-09</span></div>
+</div>
+
+</body>
+</html>
