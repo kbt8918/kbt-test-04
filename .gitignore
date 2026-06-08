@@ -9,6 +9,8 @@ node_modules/
 # Environment
 .env
 .env.local
+.env.vercel
+.env*.local
 
 # OS
 .DS_Store
