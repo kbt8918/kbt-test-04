@@ -77,7 +77,16 @@ export function LoginScreen() {
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [linkedGoogle, setLinkedGoogle] = useState<any>(null);
+  const [phoneErr, setPhoneErr] = useState("");
+  const [generalErr, setGeneralErr] = useState("");
   const valid = phone.replace(/\D/g, "").length >= 10 && (tab === "login" || agree);
+
+  // 탭 변경 시 에러 초기화
+  const handleTabChange = (k: "login" | "register") => {
+    setTab(k);
+    setPhoneErr("");
+    setGeneralErr("");
+  };
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -119,13 +128,20 @@ export function LoginScreen() {
           toast('구글 계정이 성공적으로 연동되었습니다.', 'success');
         }
       } catch (e) {
+        const errObj = e as any;
         const msg = e instanceof ApiClientError ? e.message : '구글 정보 불러오기에 실패했습니다.';
+        if (e instanceof ApiClientError && e.code === "CONFLICT") {
+          setGeneralErr("이미 가입된 구글 계정입니다. 로그인 탭을 이용해주세요.");
+        } else {
+          setGeneralErr(msg);
+        }
         toast(msg, 'danger');
       } finally {
         setBusy(false);
       }
     },
     onError: () => {
+      setGeneralErr('구글 로그인에 실패했습니다. 다시 시도해주세요.');
       toast('구글 로그인에 실패했습니다.', 'danger');
       setBusy(false);
     },
@@ -133,8 +149,20 @@ export function LoginScreen() {
 
   // 실제 API 연동 — 성공 시 live 세션으로 전환
   const submit = async () => {
-    if (!valid || busy) return;
+    setPhoneErr("");
+    setGeneralErr("");
+
     const digits = phone.replace(/\D/g, "");
+    if (digits.length < 10) {
+      setPhoneErr("휴대폰 번호를 정확히 입력해주세요.");
+      return;
+    }
+    if (tab === "register" && !agree) {
+      setGeneralErr("이용약관 및 개인정보처리방침에 동의해주세요.");
+      return;
+    }
+    if (busy) return;
+
     setBusy(true);
     try {
       if (tab === "login") {
@@ -172,6 +200,21 @@ export function LoginScreen() {
       }
     } catch (e) {
       const msg = e instanceof ApiClientError ? e.message : "요청 중 오류가 발생했습니다.";
+      if (e instanceof ApiClientError) {
+        if (e.code === "NOT_FOUND") {
+          setPhoneErr("등록되지 않은 번호입니다. 회원가입을 진행해주세요.");
+        } else if (e.code === "CONFLICT") {
+          if (msg.includes("Google")) {
+             setGeneralErr("이미 연동된 구글 계정입니다. 로그인 탭을 이용해주세요.");
+          } else {
+             setPhoneErr("이미 가입된 휴대폰 번호입니다. 로그인을 진행해주세요.");
+          }
+        } else {
+          setGeneralErr(msg);
+        }
+      } else {
+        setGeneralErr(msg);
+      }
       toast(msg, "danger");
     } finally {
       setBusy(false);
@@ -249,7 +292,7 @@ export function LoginScreen() {
           ).map(([k, l]) => (
             <button
               key={k}
-              onClick={() => setTab(k)}
+              onClick={() => handleTabChange(k)}
               style={{
                 flex: 1,
                 height: 44,
@@ -268,12 +311,23 @@ export function LoginScreen() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 22, flex: 1 }}>
+          {generalErr && (
+            <div className="animate-slide-in">
+              <Banner tone="danger" icon="alert">{generalErr}</Banner>
+            </div>
+          )}
+          
           <Field
             label="휴대폰 번호"
             value={phone}
-            onChange={(v) => setPhone(fmtPhone(v))}
+            onChange={(v) => {
+              setPhone(fmtPhone(v));
+              setPhoneErr("");
+              setGeneralErr("");
+            }}
             placeholder="010-1234-5678"
             type="tel"
+            error={phoneErr}
             big
           />
 
