@@ -48,10 +48,13 @@ const ROUTE_NAMES: Record<Route, string> = {
   admin: "SCR-011~013 관리자 어드민",
 };
 
-export function PrototypeShell() {
+export function PrototypeShell({ initialInviteCode }: { initialInviteCode?: string }) {
   const [route, setRoute] = useState<Route>("login");
   const [dir, setDir] = useState<"left" | "right">("right");
-  const [state, setState] = useState<DemoState>(INITIAL_STATE);
+  const [state, setState] = useState<DemoState>({
+    ...INITIAL_STATE,
+    pendingInviteCode: initialInviteCode,
+  });
   const [toastObj, setToastObj] = useState<ToastObj | null>(null);
 
   const nav = useCallback((to: Route, d: "left" | "right" = "right") => {

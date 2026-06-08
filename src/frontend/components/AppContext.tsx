@@ -53,6 +53,7 @@ export interface DemoState {
     emoji?: string;
     picture?: string;
   } | null;
+  pendingInviteCode?: string;
 }
 
 interface AppCtxValue {
@@ -79,4 +80,5 @@ export const INITIAL_STATE: DemoState = {
   onboardingStep: 1,
   mode: "demo",
   groupId: null,
+  pendingInviteCode: undefined,
 };

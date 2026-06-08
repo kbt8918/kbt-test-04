@@ -70,7 +70,7 @@ export function QrCode({ size = 132 }: { size?: number }) {
 
 /* ════════════════════ SCR-001 로그인 / 회원가입 ════════════════════ */
 export function LoginScreen() {
-  const { nav, set, reset, toast } = useApp();
+  const { nav, set, reset, toast, state } = useApp();
   const [tab, setTab] = useState<"login" | "register">("register");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<"parent" | "family">("parent");
@@ -80,22 +80,50 @@ export function LoginScreen() {
   const [generalErr, setGeneralErr] = useState("");
   const valid = phone.replace(/\D/g, "").length >= 10 && (tab === "login" || agree);
 
-  // 로그인 후 그룹의 부모님 유무에 따라 랜딩 분기
-  const handleFamilyLogin = async (groupId: string | null) => {
-    if (!groupId) {
-      nav("family-settings", "right");
-      return;
-    }
-    try {
-      const groupInfo = await api.groupDetail(groupId);
-      const hasParent = groupInfo.members.some(m => m.isParent);
-      if (hasParent) {
-        nav("family", "right");
-      } else {
-        nav("family-settings", "right");
+  // 로그인/가입 성공 후 공통 랜딩 처리 로직
+  const processLoginSuccess = async (data: any, isRegister: boolean = false) => {
+    let finalGroupId = data.groupId;
+
+    // 초대 코드가 있으면 자동 가입 진행
+    if (state.pendingInviteCode) {
+      try {
+        const joinData = await api.joinGroup({ inviteCode: state.pendingInviteCode });
+        finalGroupId = joinData.groupId;
+        toast("가족 그룹에 성공적으로 참여되었습니다!", "success");
+        set({ pendingInviteCode: undefined, groupId: finalGroupId });
+      } catch (e) {
+        toast("초대받은 그룹 참여에 실패했습니다. 유효하지 않은 코드일 수 있습니다.", "danger");
+        set({ pendingInviteCode: undefined });
       }
-    } catch (e) {
-      nav("family", "right"); // 실패 시 기존 방식 유지
+    }
+
+    if (data.role === "admin") {
+      nav("admin", "right");
+    } else if (data.role === "parent") {
+      if (isRegister && !state.pendingInviteCode) {
+        set({ onboardingStep: 1 });
+        nav("onboarding", "right");
+      } else {
+        nav("parent", "right");
+      }
+    } else {
+      if (!finalGroupId) {
+        if (isRegister) toast('가입을 환영합니다! 가족 설정을 시작하세요.', 'success');
+        nav("family-settings", "right");
+      } else {
+        if (!isRegister && !state.pendingInviteCode) toast('로그인이 완료되었습니다.', 'success');
+        try {
+          const groupInfo = await api.groupDetail(finalGroupId);
+          const hasParent = groupInfo.members.some(m => m.isParent);
+          if (hasParent) {
+            nav("family", "right");
+          } else {
+            nav("family-settings", "right");
+          }
+        } catch (e) {
+          nav("family", "right");
+        }
+      }
     }
   };
 
@@ -139,12 +167,9 @@ export function LoginScreen() {
           googleUser: acc,
         });
 
-        if (!data.groupId) {
-          toast('가입을 환영합니다! 가족 설정을 시작하세요.', 'success');
-        } else {
-          toast('구글 로그인이 완료되었습니다.', 'success');
-        }
-        await handleFamilyLogin(data.groupId);
+        // isRegister 판단: groupId가 없고 이전에 없던 신규라면 (API는 null 반환)
+        const isNewGoogleUser = !data.groupId;
+        await processLoginSuccess(data, isNewGoogleUser);
       } catch (e) {
         const errObj = e as any;
         const msg = e instanceof ApiClientError ? e.message : '구글 정보 불러오기에 실패했습니다.';
@@ -193,9 +218,7 @@ export function LoginScreen() {
           groupId: data.groupId,
           locationSharing: data.locationSharing,
         });
-        if (data.role === "admin") nav("admin", "right");
-        else if (data.role === "parent") nav("parent", "right");
-        else await handleFamilyLogin(data.groupId);
+        await processLoginSuccess(data, false);
       } else {
         const data = await api.register({
           phone: digits,
@@ -204,14 +227,7 @@ export function LoginScreen() {
           privacyAgreed: true,
         });
         reset({ mode: "live", userId: data.userId, phone: data.phone, role: data.role, groupId: null });
-        if (role === "parent") {
-          set({ onboardingStep: 1 });
-          nav("onboarding", "right");
-        } else {
-          // 가족 자녀: 회원가입 완료 -> 가족설정 화면으로 랜딩
-          toast('회원가입이 완료되었습니다! 가족 설정을 시작하세요.', 'success');
-          nav("family-settings", "right");
-        }
+        await processLoginSuccess({ ...data, groupId: null }, true);
       }
     } catch (e) {
       const msg = e instanceof ApiClientError ? e.message : "요청 중 오류가 발생했습니다.";
@@ -264,6 +280,14 @@ export function LoginScreen() {
           flex: 1,
         }}
       >
+        {state.pendingInviteCode && (
+          <div className="animate-slide-in" style={{ marginBottom: 24 }}>
+            <Banner tone="info" icon="users">
+              초대받은 가족 그룹에 참여하기 위해<br />
+              로그인 또는 회원가입을 진행해주세요.
+            </Banner>
+          </div>
+        )}
         {/* brand lockup */}
         <div
           style={{
