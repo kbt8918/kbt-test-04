@@ -80,6 +80,25 @@ export function LoginScreen() {
   const [generalErr, setGeneralErr] = useState("");
   const valid = phone.replace(/\D/g, "").length >= 10 && (tab === "login" || agree);
 
+  // 로그인 후 그룹의 부모님 유무에 따라 랜딩 분기
+  const handleFamilyLogin = async (groupId: string | null) => {
+    if (!groupId) {
+      nav("family-settings", "right");
+      return;
+    }
+    try {
+      const groupInfo = await api.groupDetail(groupId);
+      const hasParent = groupInfo.members.some(m => m.isParent);
+      if (hasParent) {
+        nav("family", "right");
+      } else {
+        nav("family-settings", "right");
+      }
+    } catch (e) {
+      nav("family", "right"); // 실패 시 기존 방식 유지
+    }
+  };
+
   // 탭 변경 시 에러 초기화
   const handleTabChange = (k: "login" | "register") => {
     setTab(k);
@@ -122,11 +141,10 @@ export function LoginScreen() {
 
         if (!data.groupId) {
           toast('가입을 환영합니다! 가족 설정을 시작하세요.', 'success');
-          nav('family-settings', 'right');
         } else {
           toast('구글 로그인이 완료되었습니다.', 'success');
-          nav('family', 'right');
         }
+        await handleFamilyLogin(data.groupId);
       } catch (e) {
         const errObj = e as any;
         const msg = e instanceof ApiClientError ? e.message : '구글 정보 불러오기에 실패했습니다.';
@@ -177,7 +195,7 @@ export function LoginScreen() {
         });
         if (data.role === "admin") nav("admin", "right");
         else if (data.role === "parent") nav("parent", "right");
-        else nav("family", "right");
+        else await handleFamilyLogin(data.groupId);
       } else {
         const data = await api.register({
           phone: digits,
