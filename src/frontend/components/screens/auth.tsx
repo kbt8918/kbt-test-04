@@ -110,7 +110,7 @@ export function LoginScreen() {
             groupId: data.groupId,
             locationSharing: data.locationSharing,
             googleUser: acc,
-          } as any);
+          });
           nav('family', 'right');
           toast('구글 로그인이 완료되었습니다.', 'success');
         } else {
@@ -160,11 +160,15 @@ export function LoginScreen() {
           googleName: linkedGoogle?.name,
           googlePicture: linkedGoogle?.picture,
         });
-        reset({ mode: "live", userId: data.userId, phone: data.phone, role: data.role, groupId: null, googleUser: linkedGoogle } as any);
+        reset({ mode: "live", userId: data.userId, phone: data.phone, role: data.role, groupId: null, googleUser: linkedGoogle });
         if (role === "parent") {
           set({ onboardingStep: 1 });
           nav("onboarding", "right");
-        } else nav("group", "right");
+        } else {
+          // 가족 자녀: 회원가입 완료 -> 가족설정 화면으로 랜딩
+          toast('회원가입이 완료되었습니다! 가족 설정을 시작하세요.', 'success');
+          nav("family-settings", "right");
+        }
       }
     } catch (e) {
       const msg = e instanceof ApiClientError ? e.message : "요청 중 오류가 발생했습니다.";
@@ -176,13 +180,17 @@ export function LoginScreen() {
 
   // 로그인 없이 데모 데이터로 둘러보기
   const enterDemo = () => {
-    reset({ mode: "demo", role, phone, googleUser: linkedGoogle } as any);
+    reset({ mode: "demo", role, phone, googleUser: linkedGoogle });
     if (tab === "login") {
       nav("family", "right");
     } else if (role === "parent") {
       set({ onboardingStep: 1 });
       nav("onboarding", "right");
-    } else nav("group", "right");
+    } else {
+      // 가족 자녀 데모: 가족설정 화면으로 랜딩
+      toast('회원가입이 완료되었습니다! 가족 설정을 시작하세요.', 'success');
+      nav("family-settings", "right");
+    }
   };
 
   return (

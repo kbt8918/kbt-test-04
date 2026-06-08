@@ -46,6 +46,13 @@ export interface DemoState {
   groupId?: string | null;
   locationConsentAt?: string | null;
   locationInterval?: number;
+  // 구글 계정 연동 정보
+  googleUser?: {
+    email: string;
+    name?: string;
+    emoji?: string;
+    picture?: string;
+  } | null;
 }
 
 interface AppCtxValue {
