@@ -32,11 +32,198 @@ function memberLabel(m: { name: string | null; relation: string | null }, fallba
   return fallback;
 }
 
-/* 부모님 멤버들을 대표 라벨로 요약: 1명이면 그대로, 여러 명이면 "OOO 외 N명" */
-function parentsSummary(parents: { name: string | null; relation: string | null }[]): string {
-  if (parents.length === 0) return "부모님";
-  const first = memberLabel(parents[0]);
-  return parents.length === 1 ? first : `${first} 외 ${parents.length - 1}명`;
+/* ──────── 다중 부모님 위치 표시 모델 (데모/실서버 공용) ──────── */
+interface ParentLoc {
+  userId: string;
+  label: string;
+  emoji: string;
+  sharing: boolean;
+  address: string | null;
+  battery?: number;
+  updatedText?: string;
+  coord?: GeoPoint | null;
+  marker: { x: number; y: number };
+}
+
+// 플랜별 위치 확인 가능 부모님 수 (Free 2명 / Pro 무제한). 백엔드 PLAN_PARENT_LIMIT 와 일치
+const FREE_PARENT_LIMIT = 2;
+
+// FakeMap(스타일맵)용 부모님 마커 분산 좌표 (실좌표 없을 때)
+const PARENT_SPREAD = [
+  { x: 44, y: 36 },
+  { x: 62, y: 54 },
+  { x: 32, y: 58 },
+  { x: 68, y: 30 },
+  { x: 50, y: 72 },
+];
+
+// 데모 모드: 기본 2명 동시 확인을 보여주기 위한 가짜 부모님 데이터
+const DEMO_PARENTS: ParentLoc[] = [
+  {
+    userId: "demo-mom",
+    label: "홍길순 (어머니)",
+    emoji: "👵",
+    sharing: true,
+    address: "서울시 마포구 창전동 12-4",
+    battery: 78,
+    updatedText: "30초 전 갱신",
+    marker: PARENT_SPREAD[0],
+  },
+  {
+    userId: "demo-dad",
+    label: "김광수 (아버지)",
+    emoji: "👴",
+    sharing: true,
+    address: "서울시 마포구 서교동 45-2",
+    battery: 64,
+    updatedText: "1분 전 갱신",
+    marker: PARENT_SPREAD[1],
+  },
+];
+
+/** ISO 시각 → "N초/분/시간 전 갱신" 상대 표기 */
+function relTime(iso: string | null | undefined): string | undefined {
+  if (!iso) return undefined;
+  const diff = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(diff)) return undefined;
+  const s = Math.max(0, Math.floor(diff / 1000));
+  if (s < 60) return `${s}초 전 갱신`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}분 전 갱신`;
+  return `${Math.floor(m / 60)}시간 전 갱신`;
+}
+
+/** 부모님 1명 위치 카드 (가로 스크롤 항목) */
+function ParentCard({ p, selected, onClick }: { p: ParentLoc; selected?: boolean; onClick?: () => void }) {
+  const showMeta = p.sharing && (p.battery != null || !!p.updatedText);
+  return (
+    <button
+      data-parent-id={p.userId}
+      onClick={onClick}
+      style={{
+        flex: "0 0 calc(86% - 5px)",
+        scrollSnapAlign: "start",
+        border: "none",
+        background: "transparent",
+        padding: 0,
+        cursor: "pointer",
+      }}
+      className="press"
+    >
+      <Card
+        pad={16}
+        style={{
+          border: selected ? "2.5px solid var(--brand)" : "none",
+          transition: "border-color 150ms, box-shadow 150ms",
+          boxShadow: selected ? "0 0 0 3px rgba(46,125,50,.1)" : "none",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: showMeta ? 10 : 0 }}>
+          <Avatar emoji={p.emoji} size={44} ring={p.sharing ? "var(--brand)" : "var(--g400)"} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              className="t-h3"
+              style={{ color: "var(--g900)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+            >
+              {p.label}
+            </div>
+            {p.sharing ? (
+              <div
+                className="t-body-sm"
+                style={{ color: "var(--g600)", display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}
+              >
+                <Icon name="mapPin" size={15} color="var(--brand)" stroke={2} />
+                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {p.address ?? "위치 확인 중…"}
+                </span>
+              </div>
+            ) : (
+              <div className="t-body-sm" style={{ color: "var(--g500)", marginTop: 2 }}>
+                위치 공유가 꺼져 있어요
+              </div>
+            )}
+          </div>
+          <Pill tone={p.sharing ? "on" : "off"} dot>
+            {p.sharing ? "실시간" : "꺼짐"}
+          </Pill>
+        </div>
+        {showMeta && (
+          <div style={{ display: "flex", gap: 8 }}>
+            {p.battery != null && (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 10px",
+                  background: "var(--g50)",
+                  borderRadius: 10,
+                }}
+              >
+                <Icon name="battery" size={16} color="var(--brand)" stroke={2} />
+                <span className="t-body-sm" style={{ color: "var(--g700)", fontWeight: 600 }}>
+                  배터리 {p.battery}%
+                </span>
+              </div>
+            )}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 10px",
+                background: "var(--g50)",
+                borderRadius: 10,
+              }}
+            >
+              <Icon name="clock" size={16} color="var(--g500)" stroke={2} />
+              <span className="t-body-sm" style={{ color: "var(--g700)", fontWeight: 600 }}>
+                {p.updatedText ?? "방금 갱신"}
+              </span>
+            </div>
+          </div>
+        )}
+      </Card>
+    </button>
+  );
+}
+
+/** Pro 업그레이드 유도 카드 (Free 플랜 한도 안내) */
+function UpsellCard({ hidden, onUpgrade }: { hidden: number; onUpgrade: () => void }) {
+  return (
+    <div style={{ flex: "0 0 calc(80% - 5px)", scrollSnapAlign: "start" }}>
+      <Card pad={16} style={{ background: "var(--brand-light)", border: "1.5px solid var(--brand)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 999,
+              background: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon name="shield" size={22} color="var(--brand)" stroke={2} />
+          </div>
+          <div className="t-h3" style={{ color: "var(--brand-dark)" }}>
+            Pro 플랜
+          </div>
+        </div>
+        <p className="t-body-sm" style={{ color: "var(--g700)", lineHeight: 1.5, marginBottom: 12 }}>
+          {hidden > 0
+            ? `Pro로 업그레이드하면 나머지 부모님 ${hidden}명도 모두 확인할 수 있어요.`
+            : "Pro 플랜은 부모님을 원하는 만큼 추가해 동시에 확인할 수 있어요."}
+        </p>
+        <Btn icon="shieldCheck" onClick={onUpgrade}>
+          Pro 업그레이드
+        </Btn>
+      </Card>
+    </div>
+  );
 }
 
 /* ════════════════════ SCR-006 가족 메인 (실시간 지도) ════════════════════ */
@@ -46,67 +233,120 @@ export function FamilyMap() {
   const groupId = state.groupId ?? "";
   const [sosOpen, setSosOpen] = useState(false);
   const [calling, setCalling] = useState(false);
-  const [liveSharing, setLiveSharing] = useState<boolean | null>(null);
-  const [liveAddress, setLiveAddress] = useState<string | null>(null);
-  const [liveCoord, setLiveCoord] = useState<GeoPoint | null>(null);
-  const [parents, setParents] = useState<GroupMemberItem[]>([]);
-  // live 모드면 서버에서 가져온 공유 상태, 아니면 데모 상태
-  const sharing = live
-    ? liveSharing ?? false
-    : state.locationSharing !== false && !state.consentRevoked;
+  const [liveParents, setLiveParents] = useState<ParentLoc[] | null>(null);
+  const [planLimit, setPlanLimit] = useState<number | null>(FREE_PARENT_LIMIT);
+  const [totalParents, setTotalParents] = useState(0);
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // live 모드: 부모님 현재 위치 + 주소 조회 (F-011, F-013)
+  // live 모드: 플랜 한도 내 부모님 전체 현재 위치 + 주소 조회 (F-005, F-011, F-013)
   useEffect(() => {
     if (!live) return;
     let alive = true;
     api
-      .currentLocation(groupId)
-      .then(async (loc) => {
+      .currentLocations(groupId)
+      .then(async (res) => {
         if (!alive) return;
-        setLiveSharing(loc.locationSharing);
-        setLiveCoord({ lat: loc.latitude, lng: loc.longitude });
-        try {
-          const addr = await api.address(loc.latitude, loc.longitude);
-          if (alive) setLiveAddress(addr.roadAddress || addr.jibunAddress);
-        } catch {
-          /* 주소 변환 실패 무시 */
+        setPlanLimit(res.planLimit);
+        setTotalParents(res.totalParents);
+        const base: ParentLoc[] = res.parents.map((p, i) => ({
+          userId: p.userId,
+          label: memberLabel({ name: p.name, relation: p.relation }),
+          emoji: "👵",
+          sharing: p.locationSharing && p.latitude != null && p.longitude != null,
+          address: null,
+          updatedText: relTime(p.timestamp),
+          coord: p.latitude != null && p.longitude != null ? { lat: p.latitude, lng: p.longitude } : null,
+          marker: PARENT_SPREAD[i % PARENT_SPREAD.length],
+        }));
+        setLiveParents(base);
+        // 첫 번째 부모님 기본 선택
+        if (base.length > 0 && !selectedParentId) {
+          setSelectedParentId(base[0].userId);
         }
+        // 부모님별 주소 역지오코딩 (실패는 무시)
+        const withAddr = await Promise.all(
+          base.map(async (p) => {
+            if (!p.coord) return p;
+            try {
+              const addr = await api.address(p.coord.lat, p.coord.lng);
+              return { ...p, address: addr.roadAddress || addr.jibunAddress };
+            } catch {
+              return p;
+            }
+          })
+        );
+        if (alive) setLiveParents(withAddr);
       })
       .catch(() => {
-        // 위치 데이터 없음(공유 OFF/미전송) → 꺼짐 처리
-        if (alive) setLiveSharing(false);
+        if (alive) {
+          setLiveParents([]);
+          setTotalParents(0);
+        }
       });
     return () => {
       alive = false;
     };
   }, [live, groupId]);
 
-  // live 모드: 그룹 구성원 중 부모님(role=parent) 조회 → 이름·호칭 표시 (F-005)
-  useEffect(() => {
-    if (!live) return;
-    let alive = true;
-    api
-      .groupDetail(groupId)
-      .then((d) => {
-        if (alive) setParents(d.members.filter((m) => m.isParent));
-      })
-      .catch(() => {
-        /* 멤버 조회 실패 시 기본 라벨 사용 */
-      });
-    return () => {
-      alive = false;
-    };
-  }, [live, groupId]);
+  const parents: ParentLoc[] = live ? liveParents ?? [] : DEMO_PARENTS;
+  const effLimit = live ? planLimit : FREE_PARENT_LIMIT;
+  const effTotal = live ? totalParents : DEMO_PARENTS.length;
+  const hiddenCount = effLimit == null ? 0 : Math.max(0, effTotal - effLimit);
+  const anySharing = parents.some((p) => p.sharing);
+  const loading = live && liveParents === null;
 
-  const parentLabel = live ? parentsSummary(parents) : "홍길순 (어머니)";
-  const markers = [
-    { x: 46, y: 38, emoji: "👵", label: parentLabel, color: "var(--brand)", active: true, stale: !sharing },
-  ];
-  // 실 좌표가 있으면 카카오맵용 마커 구성 (없으면 MapView 가 FakeMap 으로 폴백)
-  const geoMarkers =
-    live && liveCoord && sharing
-      ? [{ ...liveCoord, emoji: "👵", label: parentLabel, color: "var(--brand)" }]
-      : undefined;
+  // 전체 부모님 마커 (모든 부모님 표시)
+  const markers = parents.map((p) => ({
+    x: p.marker.x,
+    y: p.marker.y,
+    emoji: p.emoji,
+    label: p.label,
+    color: "var(--brand)",
+    active: true,
+    stale: !p.sharing,
+  }));
+  // 카카오맵용 실좌표 마커
+  const geoMarkers = parents
+    .filter((p) => p.coord && p.sharing)
+    .map((p) => ({ ...(p.coord as GeoPoint), emoji: p.emoji, label: p.label, color: "var(--brand)" }));
+
+  // 선택된 부모님의 위치정보
+  const selectedParent = selectedParentId ? parents.find((p) => p.userId === selectedParentId) : null;
+  // 지도: 선택된 부모님만 표시 (포커스 효과)
+  const focusMarkers = selectedParent
+    ? [
+        {
+          x: selectedParent.marker.x,
+          y: selectedParent.marker.y,
+          emoji: selectedParent.emoji,
+          label: selectedParent.label,
+          color: "var(--brand)",
+          active: true,
+          stale: !selectedParent.sharing,
+        },
+      ]
+    : markers.slice(0, 1);
+  const focusGeoMarkers = selectedParent && selectedParent.coord && selectedParent.sharing
+    ? [{ ...selectedParent.coord, emoji: selectedParent.emoji, label: selectedParent.label, color: "var(--brand)" }]
+    : geoMarkers.slice(0, 1);
+
+  // 데모 모드: 첫 번째 부모님 기본 선택
+  React.useEffect(() => {
+    if (!live && !selectedParentId && parents.length > 0) {
+      setSelectedParentId(parents[0].userId);
+    }
+  }, [live, selectedParentId, parents]);
+
+  // 선택된 부모님으로 자동 스크롤 + 지도 포커스
+  React.useEffect(() => {
+    if (!selectedParentId || !scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const selectedBtn = container.querySelector(`[data-parent-id="${selectedParentId}"]`) as HTMLElement;
+    if (selectedBtn) {
+      selectedBtn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [selectedParentId]);
 
   return (
     <div
@@ -123,15 +363,15 @@ export function FamilyMap() {
 
       <div style={{ flex: 1, position: "relative" }}>
         <MapView
-          markers={markers}
-          dim={!sharing}
-          grey={!sharing}
-          geoMarkers={geoMarkers}
-          geoCenter={geoMarkers?.[0]}
+          markers={focusMarkers}
+          dim={!selectedParent?.sharing}
+          grey={!selectedParent?.sharing}
+          geoMarkers={focusGeoMarkers.length ? focusGeoMarkers : undefined}
+          geoCenter={focusGeoMarkers[0]}
         />
 
-        {/* off banner */}
-        {!sharing && (
+        {/* off banner — 공유 중인 부모님이 한 명도 없을 때 */}
+        {!loading && parents.length > 0 && !anySharing && (
           <div style={{ position: "absolute", top: 12, left: 12, right: 12, zIndex: 50 }}>
             <Banner tone="grey" icon="mapPin">
               부모님이 위치 공유를 꺼두셨습니다.
@@ -177,7 +417,7 @@ export function FamilyMap() {
           style={{
             position: "absolute",
             left: 14,
-            bottom: 130,
+            bottom: 210,
             zIndex: 45,
             display: "flex",
             alignItems: "center",
@@ -195,76 +435,70 @@ export function FamilyMap() {
           <Icon name="sos" size={18} color="#fff" stroke={2.4} /> SOS 수신 미리보기
         </button>
 
-        {/* location summary card */}
-        <div style={{ position: "absolute", left: 12, right: 12, bottom: 12, zIndex: 45 }}>
-          <Card pad={16}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: sharing ? 10 : 0 }}>
-              <Avatar emoji="👵" size={44} ring={sharing ? "var(--brand)" : "var(--g400)"} />
-              <div style={{ flex: 1 }}>
-                <div className="t-h3" style={{ color: "var(--g900)" }}>
-                  {live ? (
-                    parentLabel
-                  ) : (
-                    <>
-                      홍길순 <span style={{ color: "var(--g500)", fontWeight: 500 }}>(어머니)</span>
-                    </>
-                  )}
-                </div>
-                {sharing ? (
-                  <div
-                    className="t-body-sm"
-                    style={{ color: "var(--g600)", display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}
-                  >
-                    <Icon name="mapPin" size={15} color="var(--brand)" stroke={2} />{" "}
-                    {live ? liveAddress ?? "위치 확인 중…" : "서울시 마포구 창전동 12-4"}
+        {/* parent location cards — 다중 부모님 가로 스크롤 */}
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 12, zIndex: 45, maxHeight: 220 }}>
+          {/* 플랜·인원 안내 */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 14px 8px" }}>
+            <Icon name="users" size={14} color="#fff" stroke={2.2} />
+            <span
+              style={{
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: "calc(12px*var(--fz))",
+                textShadow: "0 1px 4px rgba(0,0,0,.45)",
+              }}
+            >
+              {effLimit == null
+                ? `부모님 ${parents.length}명 확인 중 · Pro 무제한`
+                : `부모님 ${parents.length}명 확인 중 · Free ${effLimit}명까지`}
+            </span>
+          </div>
+          <div
+            ref={scrollContainerRef}
+            style={{
+              display: "flex",
+              gap: 10,
+              overflowX: "auto",
+              overflowY: "hidden",
+              padding: "0 12px 6px",
+              scrollSnapType: "x mandatory",
+              WebkitOverflowScrolling: "touch",
+              scrollBehavior: "smooth",
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(255,255,255,.3) transparent",
+              height: 170,
+            }}
+          >
+            {loading ? (
+              <div style={{ minWidth: "86%", scrollSnapAlign: "start" }}>
+                <Card pad={16}>
+                  <div className="t-body-sm" style={{ color: "var(--g500)" }}>
+                    부모님 위치를 불러오는 중…
                   </div>
-                ) : (
-                  <div className="t-body-sm" style={{ color: "var(--g500)", marginTop: 2 }}>
-                    위치 공유가 꺼져 있어요
+                </Card>
+              </div>
+            ) : parents.length === 0 ? (
+              <div style={{ minWidth: "86%", scrollSnapAlign: "start" }}>
+                <Card pad={16}>
+                  <div className="t-body-sm" style={{ color: "var(--g500)" }}>
+                    연결된 부모님이 없습니다. 가족 설정에서 부모님을 초대해 주세요.
                   </div>
-                )}
+                </Card>
               </div>
-              <Pill tone={sharing ? "on" : "off"} dot>
-                {sharing ? "실시간" : "꺼짐"}
-              </Pill>
-            </div>
-            {sharing && (
-              <div style={{ display: "flex", gap: 8 }}>
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "8px 10px",
-                    background: "var(--g50)",
-                    borderRadius: 10,
-                  }}
-                >
-                  <Icon name="battery" size={16} color="var(--brand)" stroke={2} />
-                  <span className="t-body-sm" style={{ color: "var(--g700)", fontWeight: 600 }}>
-                    배터리 78%
-                  </span>
-                </div>
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "8px 10px",
-                    background: "var(--g50)",
-                    borderRadius: 10,
-                  }}
-                >
-                  <Icon name="clock" size={16} color="var(--g500)" stroke={2} />
-                  <span className="t-body-sm" style={{ color: "var(--g700)", fontWeight: 600 }}>
-                    30초 전 갱신
-                  </span>
-                </div>
-              </div>
+            ) : (
+              parents.map((p) => (
+                <ParentCard
+                  key={p.userId}
+                  p={p}
+                  selected={selectedParentId === p.userId}
+                  onClick={() => setSelectedParentId(p.userId)}
+                />
+              ))
             )}
-          </Card>
+            {!loading && effLimit != null && (
+              <UpsellCard hidden={hiddenCount} onUpgrade={() => toast("Pro 플랜 안내 페이지로 이동합니다.")} />
+            )}
+          </div>
         </div>
       </div>
 

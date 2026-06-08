@@ -62,3 +62,29 @@ export async function findGroupParent(db: DB, groupId: string) {
   if (e2) throw new ApiError("INTERNAL_ERROR", e2.message);
   return parent;
 }
+
+/** 그룹 내 parent(부모님) 사용자 전체. 호칭(relation) 포함. 없으면 [] */
+export async function findGroupParents(db: DB, groupId: string) {
+  const { data: members, error } = await db
+    .from("group_members")
+    .select("user_id, relation")
+    .eq("group_id", groupId);
+  if (error) throw new ApiError("INTERNAL_ERROR", error.message);
+  const ids = (members ?? []).map((m) => m.user_id);
+  if (ids.length === 0) return [];
+  const relationByUser = new Map<string, string | null>(
+    (members ?? []).map((m) => [m.user_id, m.relation])
+  );
+  const { data: parents, error: e2 } = await db
+    .from("users")
+    .select("id, name, location_sharing, last_seen_at")
+    .in("id", ids)
+    .eq("role", "parent")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  if (e2) throw new ApiError("INTERNAL_ERROR", e2.message);
+  return (parents ?? []).map((p) => ({
+    ...p,
+    relation: relationByUser.get(p.id) ?? null,
+  }));
+}

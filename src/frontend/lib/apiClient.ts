@@ -127,6 +127,23 @@ export interface CurrentLocationData {
   locationSharing: boolean;
   timestamp: string;
 }
+export interface ParentLocationItem {
+  userId: string;
+  name: string | null;
+  relation: string | null;
+  locationSharing: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+  timestamp: string | null;
+}
+export interface ParentsLocationData {
+  plan: string;
+  planLimit: number | null; // null = 무제한(Pro)
+  totalParents: number;
+  visibleCount: number;
+  parents: ParentLocationItem[];
+}
 export interface HistoryData {
   date: string;
   totalPoints: number;
@@ -231,6 +248,8 @@ export const api = {
     ),
   currentLocation: (groupId: string) =>
     request<CurrentLocationData>("GET", `/api/location/current/${groupId}`),
+  currentLocations: (groupId: string) =>
+    request<ParentsLocationData>("GET", `/api/location/current/${groupId}/parents`),
   history: (groupId: string, date: string) =>
     request<HistoryData>("GET", "/api/location/history", undefined, { groupId, date }),
   address: (lat: number, lng: number) =>
