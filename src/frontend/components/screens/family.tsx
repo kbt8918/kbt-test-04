@@ -1327,6 +1327,7 @@ export function FamilySettings() {
   const [unlinkConfirmOpen, setUnlinkConfirmOpen] = useState(false);
   // 회원가입 직후 랜딩 감지 (그룹 미설정 상태)
   const isNewUser = !state.groupId && state.role === "family";
+  const [inviteCode, setInviteCode] = useState("");
 
   useEffect(() => {
     if (!live) return;
@@ -1334,10 +1335,14 @@ export function FamilySettings() {
     api
       .groupDetail(groupId)
       .then((d) => {
-        if (alive) setMembers(d.members);
+        if (alive) {
+          console.log("[FamilySettings] groupDetail success:", d);
+          setMembers(d.members);
+          setInviteCode(d.inviteCode || "");
+        }
       })
-      .catch(() => {
-        /* 조회 실패 시 빈 목록 유지 */
+      .catch((err) => {
+        console.error("[FamilySettings] groupDetail error:", err);
       });
     return () => {
       alive = false;
@@ -1365,6 +1370,27 @@ export function FamilySettings() {
     } finally {
       setSavingRelation(false);
     }
+  };
+
+  const copyInviteLink = () => {
+    if (state.mode === "demo") {
+      toast("데모 체험 중에는 초대 링크를 복사할 수 없습니다.", "danger");
+      return;
+    }
+    if (!state.groupId) {
+      toast("가족 그룹을 먼저 생성하거나 참여해주세요.", "danger");
+      return;
+    }
+    if (!inviteCode) {
+      toast("초대 코드를 불러오는 중입니다. 잠시 후 다시 시도해주세요.", "danger");
+      return;
+    }
+    const link = `${window.location.origin}/join?code=${inviteCode}`;
+    navigator.clipboard.writeText(link).then(() => {
+      toast("가족 초대 링크를 클립보드에 복사했습니다.", "success");
+    }).catch(() => {
+      toast("클립보드 복사에 실패했습니다.", "danger");
+    });
   };
 
   const SectionLabel = ({ icon, label, danger }: { icon: string; label: string; danger?: boolean }) => (
@@ -1672,7 +1698,7 @@ export function FamilySettings() {
             )}
             <button
               className="press"
-              onClick={() => toast("가족 초대 링크를 복사했습니다.", "success")}
+              onClick={copyInviteLink}
               style={{
                 display: "flex",
                 alignItems: "center",
