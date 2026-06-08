@@ -76,7 +76,6 @@ export function LoginScreen() {
   const [role, setRole] = useState<"parent" | "family">("parent");
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [linkedGoogle, setLinkedGoogle] = useState<any>(null);
   const [phoneErr, setPhoneErr] = useState("");
   const [generalErr, setGeneralErr] = useState("");
   const valid = phone.replace(/\D/g, "").length >= 10 && (tab === "login" || agree);
@@ -103,29 +102,30 @@ export function LoginScreen() {
           picture: userInfo.picture,
         };
 
-        if (tab === 'login') {
-          // 실제 API 호출: Google OAuth 로그인
-          const data = await api.googleLogin({
-            accessToken: tokenResponse.access_token,
-            email: userInfo.email,
-            name: userInfo.name,
-            picture: userInfo.picture,
-          });
-          reset({
-            mode: "live",
-            userId: data.userId,
-            phone: data.phone,
-            role: data.role,
-            groupId: data.groupId,
-            locationSharing: data.locationSharing,
-            googleUser: acc,
-          });
-          nav('family', 'right');
-          toast('구글 로그인이 완료되었습니다.', 'success');
+        // 구글 로그인/회원가입 동시 처리
+        const data = await api.googleLogin({
+          accessToken: tokenResponse.access_token,
+          email: userInfo.email,
+          name: userInfo.name,
+          picture: userInfo.picture,
+        });
+
+        reset({
+          mode: "live",
+          userId: data.userId,
+          phone: data.phone,
+          role: data.role,
+          groupId: data.groupId,
+          locationSharing: data.locationSharing,
+          googleUser: acc,
+        });
+
+        if (!data.groupId) {
+          toast('가입을 환영합니다! 가족 설정을 시작하세요.', 'success');
+          nav('family-settings', 'right');
         } else {
-          // 회원가입 탭: 구글 계정 연동만 저장
-          setLinkedGoogle(acc);
-          toast('구글 계정이 성공적으로 연동되었습니다.', 'success');
+          toast('구글 로그인이 완료되었습니다.', 'success');
+          nav('family', 'right');
         }
       } catch (e) {
         const errObj = e as any;
@@ -184,11 +184,8 @@ export function LoginScreen() {
           role,
           termsAgreed: true,
           privacyAgreed: true,
-          googleEmail: linkedGoogle?.email,
-          googleName: linkedGoogle?.name,
-          googlePicture: linkedGoogle?.picture,
         });
-        reset({ mode: "live", userId: data.userId, phone: data.phone, role: data.role, groupId: null, googleUser: linkedGoogle });
+        reset({ mode: "live", userId: data.userId, phone: data.phone, role: data.role, groupId: null });
         if (role === "parent") {
           set({ onboardingStep: 1 });
           nav("onboarding", "right");
@@ -223,7 +220,7 @@ export function LoginScreen() {
 
   // 로그인 없이 데모 데이터로 둘러보기
   const enterDemo = () => {
-    reset({ mode: "demo", role, phone, googleUser: linkedGoogle });
+    reset({ mode: "demo", role, phone });
     if (tab === "login") {
       nav("family", "right");
     } else if (role === "parent") {
@@ -336,20 +333,6 @@ export function LoginScreen() {
               className="animate-slide-in"
               style={{ display: "flex", flexDirection: "column", gap: 22 }}
             >
-              {linkedGoogle && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--brand-light)', border: '1.5px solid var(--brand)', borderRadius: 12 }}>
-                  {linkedGoogle.picture ? (
-                    <img src={linkedGoogle.picture} alt="" style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0 }} />
-                  ) : (
-                    <span style={{ fontSize: 24, flexShrink: 0 }}>{linkedGoogle.emoji}</span>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="t-body-md" style={{ color: 'var(--brand-dark)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>{linkedGoogle.email}</div>
-                    <div className="t-caption" style={{ color: 'var(--brand)' }}>최초 구글 계정 연동 완료</div>
-                  </div>
-                  <button onClick={() => setLinkedGoogle(null)} className="press" style={{ fontSize: 'calc(13px*var(--fz))', color: 'var(--g600)', textDecoration: 'underline' }}>해제</button>
-                </div>
-              )}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <label className="t-h3" style={{ color: "var(--g800)" }}>
                   역할 선택
