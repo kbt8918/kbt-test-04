@@ -6,16 +6,5 @@
     "app/api/**/*": {
       "maxDuration": 15
     }
-  },
-  "env": {
-    "SUPABASE_URL": "https://vlfqbxmgszujdelvupcr.supabase.co",
-    "SUPABASE_SERVICE_ROLE": "<service_role>",
-    "SUPABASE_ANON_KEY": "<publishable_key>",
-    "KAKAO_JS_APP_KEY": "<js_app_key>",
-    "KAKAO_REST_API_KEY": "<rest_api_key>",
-    "FCM_SERVER_KEY": "<fcm_server_key>",
-    "SLACK_WEBHOOK_DEPLOY": "<slack_deploy_webhook>",
-    "GITHUB_PAT": "<github_pat>",
-    "CLAUDE_API_KEY": "<claude_api_key>"
   }
 }
