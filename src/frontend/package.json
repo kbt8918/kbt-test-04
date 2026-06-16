@@ -12,6 +12,8 @@
     "db:check": "node --env-file=.env.local scripts/check-supabase.mjs",
     "db:migrate": "node --env-file=.env.local scripts/apply-migrations.mjs",
     "db:seed-admin": "node --env-file=.env.local scripts/seed-admin.mjs",
+    "db:dev-schema": "node --env-file=.env.local scripts/create-dev-schema.mjs",
+    "db:seed-dev": "node --env-file=.env.local scripts/seed-dev.mjs",
     "deploy": "node --env-file=.env.local scripts/deploy-vercel.mjs"
   },
   "dependencies": {

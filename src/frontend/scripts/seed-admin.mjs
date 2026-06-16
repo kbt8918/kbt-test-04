@@ -19,7 +19,8 @@ if (!url || !key) {
   process.exit(1);
 }
 
-const db = createClient(url, key, { auth: { persistSession: false } });
+const schema = process.env.SUPABASE_SCHEMA ?? "public";
+const db = createClient(url, key, { auth: { persistSession: false }, db: { schema } });
 const now = new Date().toISOString();
 const passwordHash = await bcrypt.hash(`ansim:${phone}`, 8);
 

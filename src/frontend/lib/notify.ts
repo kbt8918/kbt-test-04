@@ -1,10 +1,9 @@
 // notify.ts — FCM 푸시 / SMS / 알림톡 발송 어댑터
 // MVP: 외부 키(FCM/NHN/카카오)가 .env 에 설정돼 있지 않으면 "graceful stub" 으로 동작.
 // 실제 키를 등록하면 이 모듈만 교체/확장하면 된다. (.AP-key.md 9~11번)
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "./db.types";
+import type { DbClient } from "./supabase";
 
-type DB = SupabaseClient<Database>;
+type DB = DbClient;
 
 export interface NotifyResult {
   notified: number;
