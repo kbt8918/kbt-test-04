@@ -174,36 +174,36 @@ export function ParentMain() {
             alignItems: "center",
             gap: 14,
             width: "100%",
+            textAlign: "left",
             padding: "16px 18px",
-            borderRadius: 16,
-            background: "var(--brand)",
-            border: "none",
-            boxShadow: "0 4px 14px rgba(46,125,50,.28)",
+            borderRadius: "var(--r-lg)",
+            background: "var(--brand-light)",
+            border: "1.5px solid rgba(46,125,50,.2)",
           }}
         >
           <div
             style={{
               width: 48,
               height: 48,
-              borderRadius: 999,
-              background: "rgba(255,255,255,.22)",
+              borderRadius: 14,
+              background: "var(--brand)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
             }}
           >
-            <Icon name="mic" size={26} color="#fff" stroke={2.2} />
+            <Icon name="mic" size={26} color="#fff" stroke={2} />
           </div>
-          <div style={{ flex: 1, textAlign: "left" }}>
-            <div style={{ color: "#fff", fontWeight: 800, fontSize: "calc(19px*var(--fz))" }}>
+          <div style={{ flex: 1 }}>
+            <div className="t-h3" style={{ color: "var(--brand-dark)" }}>
               가족과 대화하기
             </div>
-            <div style={{ color: "rgba(255,255,255,.85)", fontWeight: 500, fontSize: "calc(14px*var(--fz))", marginTop: 2 }}>
+            <div className="t-body-sm" style={{ color: "var(--g600)", marginTop: 2 }}>
               말하면 글자로 보내드려요
             </div>
           </div>
-          <Icon name="chevronRight" size={24} color="#fff" />
+          <Icon name="chevronRight" size={22} color="var(--brand)" />
         </button>
 
         {/* SOS button */}

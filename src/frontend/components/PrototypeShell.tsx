@@ -11,6 +11,7 @@ import {
   ToastTone,
 } from "./AppContext";
 import { Icon, IconName } from "./Icon";
+import { DEMO_ENABLED } from "../lib/env";
 import { BrandMark, Toast } from "./ui";
 import { ChromeWindow, FitStage, IOSDevice } from "./Frames";
 import { LoginScreen, OnboardingScreen, GroupScreen } from "./screens/auth";
@@ -55,6 +56,13 @@ export function PrototypeShell({ initialInviteCode }: { initialInviteCode?: stri
     ...INITIAL_STATE,
     pendingInviteCode: initialInviteCode,
   });
+
+  // [TEMP-CAPTURE] 화면설계서 스크린샷 캡처용 deep-link. ?route=family 또는 window._setRoute() 사용.
+  useEffect(() => {
+    const param = new URLSearchParams(window.location.search).get("route") as Route | null;
+    if (param) setRoute(param);
+    (window as any)._setRoute = (r: Route) => setRoute(r);
+  }, []);
   const [toastObj, setToastObj] = useState<ToastObj | null>(null);
 
   const nav = useCallback((to: Route, d: "left" | "right" = "right") => {
@@ -118,7 +126,8 @@ export function PrototypeShell({ initialInviteCode }: { initialInviteCode?: stri
           background: "linear-gradient(180deg,#E9EAE6,#DCDED8)",
         }}
       >
-        {/* top flow switcher */}
+        {/* top flow switcher — 프로토타입 전용. 상용(live/production)에서는 노출하지 않음 */}
+        {DEMO_ENABLED && (
         <div
           style={{
             height: 64,
@@ -212,6 +221,7 @@ export function PrototypeShell({ initialInviteCode }: { initialInviteCode?: stri
           )}
           <span style={{ fontSize: 13, color: "var(--g500)", fontWeight: 600 }}>{ROUTE_NAMES[route]}</span>
         </div>
+        )}
 
         {/* stage */}
         <div

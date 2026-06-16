@@ -27,6 +27,21 @@
   --font: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
     "Malgun Gothic", sans-serif;
   --mono: "Monaco", "Consolas", monospace;
+
+  /* Radius tokens (8px grid) */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+
+  /* Spacing tokens (8px grid) */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+  --sp-2xl: 48px;
+  --sp-3xl: 64px;
 }
 
 * {
@@ -144,4 +159,17 @@ select {
 .skeleton {
   background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
   background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+/* ── Safe area / PWA bottom padding ── */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── Reduced motion guard for slide-in ── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in {
+    animation: none;
+  }
 }
