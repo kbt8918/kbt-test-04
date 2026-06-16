@@ -410,30 +410,32 @@ export function FamilyMap() {
           </button>
         </div>
 
-        {/* demo SOS trigger */}
-        <button
-          className="press"
-          onClick={() => setSosOpen(true)}
-          style={{
-            position: "absolute",
-            left: 14,
-            bottom: 210,
-            zIndex: 45,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            height: 40,
-            padding: "0 14px",
-            borderRadius: 999,
-            background: "var(--danger)",
-            color: "#fff",
-            fontWeight: 800,
-            fontSize: "calc(13px*var(--fz))",
-            boxShadow: "0 4px 12px rgba(211,47,47,.4)",
-          }}
-        >
-          <Icon name="sos" size={18} color="#fff" stroke={2.4} /> SOS 수신 미리보기
-        </button>
+        {/* demo SOS trigger — 상용(live)에서는 노출하지 않음 (실제 SOS 는 푸시/실시간 수신) */}
+        {!live && (
+          <button
+            className="press"
+            onClick={() => setSosOpen(true)}
+            style={{
+              position: "absolute",
+              left: 14,
+              bottom: 210,
+              zIndex: 45,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              height: 40,
+              padding: "0 14px",
+              borderRadius: 999,
+              background: "var(--danger)",
+              color: "#fff",
+              fontWeight: 800,
+              fontSize: "calc(13px*var(--fz))",
+              boxShadow: "0 4px 12px rgba(211,47,47,.4)",
+            }}
+          >
+            <Icon name="sos" size={18} color="#fff" stroke={2.4} /> SOS 수신 미리보기
+          </button>
+        )}
 
         {/* parent location cards — 다중 부모님 가로 스크롤 */}
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 12, zIndex: 45, maxHeight: 220 }}>
@@ -971,11 +973,16 @@ export function FamilyChat() {
   const live = state.mode === "live" && !!state.groupId;
   const groupId = state.groupId ?? "";
   const myId = state.userId;
-  const [msgs, setMsgs] = useState<ChatMsg[]>([
-    { id: 1, who: "mom", name: "어머니", text: "얘들아 나 복지관 도착했다. 걱정 마라.", time: "12:02" },
-    { id: 2, who: "me", text: "네 확인했어요! 무리하지 마세요 🙏", time: "12:04", read: true },
-    { id: 3, who: "sis", name: "여동생", text: "엄마 이따 저녁에 전화드릴게요~", time: "12:06" },
-  ]);
+  // 상용(live)에서는 더미 메시지를 보여주지 않고 서버 메시지만 사용한다
+  const [msgs, setMsgs] = useState<ChatMsg[]>(
+    live
+      ? []
+      : [
+          { id: 1, who: "mom", name: "어머니", text: "얘들아 나 복지관 도착했다. 걱정 마라.", time: "12:02" },
+          { id: 2, who: "me", text: "네 확인했어요! 무리하지 마세요 🙏", time: "12:04", read: true },
+          { id: 3, who: "sis", name: "여동생", text: "엄마 이따 저녁에 전화드릴게요~", time: "12:06" },
+        ]
+  );
   const [text, setText] = useState("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -1090,7 +1097,7 @@ export function FamilyChat() {
 
   return (
     <div style={{ height: "100%", background: "var(--g50)", display: "flex", flexDirection: "column" }}>
-      <MobileHeader title="가족 그룹 채팅방" sub="홍길순가 · 4명" onBack={() => nav("family", "left")} />
+      <MobileHeader title="가족 그룹 채팅방" sub={live ? undefined : "홍길순가 · 4명"} onBack={() => nav("family", "left")} />
       <div ref={scrollRef} className="scroll-y" style={{ flex: 1, padding: "16px 16px 8px" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
           <span

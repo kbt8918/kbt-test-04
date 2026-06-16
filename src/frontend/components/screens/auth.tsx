@@ -4,6 +4,7 @@ import * as React from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useApp } from "../AppContext";
 import { api, ApiClientError } from "../../lib/apiClient";
+import { DEMO_ENABLED } from "../../lib/env";
 import { Icon } from "../Icon";
 import {
   Banner,
@@ -418,19 +419,21 @@ export function LoginScreen() {
           <Btn size="lg" disabled={!valid || busy} onClick={submit}>
             {busy ? "처리 중…" : tab === "login" ? "시작하기" : "동의하고 시작하기"}
           </Btn>
-          <button
-            className="press"
-            onClick={enterDemo}
-            disabled={busy}
-            style={{
-              height: 44,
-              color: "var(--g500)",
-              fontWeight: 600,
-              fontSize: "calc(14px*var(--fz))",
-            }}
-          >
-            로그인 없이 데모로 둘러보기
-          </button>
+          {DEMO_ENABLED && (
+            <button
+              className="press"
+              onClick={enterDemo}
+              disabled={busy}
+              style={{
+                height: 44,
+                color: "var(--g500)",
+                fontWeight: 600,
+                fontSize: "calc(14px*var(--fz))",
+              }}
+            >
+              로그인 없이 데모로 둘러보기
+            </button>
+          )}
           
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0', color: 'var(--g400)' }}>
             <div style={{ flex: 1, height: 1, background: 'var(--g200)' }} />

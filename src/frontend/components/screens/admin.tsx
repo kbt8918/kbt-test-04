@@ -438,9 +438,10 @@ function AdminSms() {
   const { state, toast } = useApp();
   const live = state.mode === "live";
   const [channel, setChannel] = useState<"sms" | "alimtalk">("sms");
-  const [recipients, setRecipients] = useState("010-1234-5678, 010-9876-5432");
+  // 상용에서는 더미 수신번호를 미리 채우지 않는다 (데모 모드에서만 예시 제공)
+  const [recipients, setRecipients] = useState(live ? "" : "010-1234-5678, 010-9876-5432");
   const [msg, setMsg] = useState(
-    "[안심맵 긴급 공지]\n금일 새벽 서버 정기 점검이 예정되어 있어 일시적으로 서비스 이용이 제한될 수 있습니다."
+    live ? "" : "[안심맵 긴급 공지]\n금일 새벽 서버 정기 점검이 예정되어 있어 일시적으로 서비스 이용이 제한될 수 있습니다."
   );
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);

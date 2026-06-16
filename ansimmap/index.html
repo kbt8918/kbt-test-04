@@ -1072,11 +1072,26 @@ function LoginScreen() {
   const [role, setRole] = useState('parent');
   const [agree, setAgree] = useState(false);
   const [linkedGoogle, setLinkedGoogle] = useState(null);
-  const valid = phone.replace(/\D/g, '').length >= 10 && (tab === 'login' || agree);
+  const [adminPw, setAdminPw] = useState('');
+  // 관리자 데모 계정 (id / pwd)
+  const ADMIN_ID = 'admin', ADMIN_PW = 'ansim2026!';
+  const isAdminId = tab === 'login' && phone.trim().toLowerCase() === ADMIN_ID;
+  const valid = isAdminId
+    ? adminPw.length > 0
+    : phone.replace(/\D/g, '').length >= 10 && (tab === 'login' || agree);
 
   const submit = () => {
     if (!valid) return;
     if (tab === 'login') {
+      if (isAdminId) {
+        if (adminPw !== ADMIN_PW) {
+          toast('관리자 비밀번호가 올바르지 않습니다.', 'danger');
+          return;
+        }
+        set({ role: 'admin' });
+        nav('admin', 'right');
+        return;
+      }
       if (phone.replace(/\D/g, '') !== '01012345678') {
         toast('등록되지 않은 번호입니다. 회원가입 탭을 눌러 가입해 주세요.', 'danger');
         return;
@@ -1111,7 +1126,15 @@ function LoginScreen() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 22, flex: 1 }}>
-          <Field label="휴대폰 번호" value={phone} onChange={v => setPhone(fmtPhone(v))} placeholder="010-1234-5678" type="tel" big />
+          <Field label="휴대폰 번호" value={phone}
+            onChange={v => setPhone(/[a-zA-Z]/.test(v) ? v : fmtPhone(v))}
+            placeholder="010-1234-5678" type="text" big />
+
+          {isAdminId && (
+            <div className="slide-in">
+              <Field label="관리자 비밀번호" value={adminPw} onChange={setAdminPw} placeholder="비밀번호를 입력하세요" type="password" big />
+            </div>
+          )}
 
           {tab === 'register' && (
             <div className="slide-in" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -1139,13 +1162,16 @@ function LoginScreen() {
               </div>
             </div>
           )}
-          {tab === 'login' && (
-            <Banner tone="grey" icon="bell">데모 번호 <b className="mono">010-1234-5678</b> 로 로그인하면 가족 화면으로 이동합니다.</Banner>
+          {tab === 'login' && !isAdminId && (
+            <Banner tone="grey" icon="bell">데모 번호 <b className="mono">010-1234-5678</b> 로 로그인하면 가족 화면으로 이동합니다. 관리자는 ID <b className="mono">admin</b> 으로 로그인하세요.</Banner>
+          )}
+          {isAdminId && (
+            <Banner tone="grey" icon="bell">관리자 계정으로 로그인합니다. 비밀번호 입력 후 시작하기를 누르세요.</Banner>
           )}
         </div>
 
         <div style={{ marginTop: 24 }}>
-          <Btn size="lg" disabled={!valid} onClick={submit}>{tab === 'login' ? '시작하기' : '동의하고 시작하기'}</Btn>
+          <Btn size="lg" disabled={!valid} onClick={submit}>{isAdminId ? '관리자 로그인' : tab === 'login' ? '시작하기' : '동의하고 시작하기'}</Btn>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 0' }}>
           <div style={{ flex: 1, height: 1, background: 'var(--g200)' }} />
