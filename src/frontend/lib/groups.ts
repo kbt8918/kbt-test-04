@@ -1,9 +1,8 @@
 // groups.ts — 그룹/구성원 조회 공통 헬퍼 (service_role 클라이언트 사용)
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "./db.types";
 import { ApiError } from "./api";
+import type { DbClient } from "./supabase";
 
-type DB = SupabaseClient<Database>;
+type DB = DbClient;
 
 /** 사용자가 속한 첫 번째 그룹의 membership 행. 없으면 null */
 export async function findMembership(db: DB, userId: string) {

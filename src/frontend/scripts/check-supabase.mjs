@@ -11,8 +11,10 @@ if (!url || !serviceKey) {
   process.exit(1);
 }
 
+const schema = process.env.SUPABASE_SCHEMA ?? "public";
 const supabase = createClient(url, serviceKey, {
   auth: { persistSession: false },
+  db: { schema },
 });
 
 const { count, error } = await supabase

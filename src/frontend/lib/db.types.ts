@@ -162,9 +162,10 @@ export interface AlimtalkLogsRow {
 type WithDefaults<Row, Optional extends keyof Row> = Omit<Row, Optional> &
   Partial<Pick<Row, Optional>>;
 
-export interface Database {
-  public: {
-    Tables: {
+// 스키마 본문 — public(운영)과 dev(로컬) 가 동일 구조를 공유한다.
+// 로컬은 SUPABASE_SCHEMA=dev 로 dev 스키마를 사용한다(lib/supabase.ts 참조).
+interface SchemaBody {
+  Tables: {
       users: TableShape<
         UsersRow,
         WithDefaults<
@@ -273,5 +274,9 @@ export interface Database {
       send_status: SendStatus;
     };
     CompositeTypes: Record<string, never>;
-  };
+}
+
+export interface Database {
+  public: SchemaBody;
+  dev: SchemaBody;
 }
