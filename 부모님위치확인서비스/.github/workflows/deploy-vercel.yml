@@ -1,0 +1,16 @@
+name: Vercel 자동 배포
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Vercel 프로덕션 배포
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vercel Deploy Hook 트리거
+        run: |
+          curl -s -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+          echo "Vercel 배포가 시작되었습니다."
