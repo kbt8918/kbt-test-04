@@ -71,13 +71,23 @@ const DEMO_PARENTS: ParentLoc[] = [
   },
   {
     userId: "demo-dad",
-    label: "김광수 (아버지)",
+    label: "홍판석 (아버지)",
     emoji: "👴",
     sharing: true,
     address: "서울시 마포구 서교동 45-2",
     battery: 64,
     updatedText: "1분 전 갱신",
     marker: PARENT_SPREAD[1],
+  },
+  {
+    userId: "demo-grandma",
+    label: "박순자 (할머니)",
+    emoji: "👵",
+    sharing: true,
+    address: "서울시 마포구 합정동 33-7",
+    battery: 91,
+    updatedText: "2분 전 갱신",
+    marker: PARENT_SPREAD[2],
   },
 ];
 
@@ -296,40 +306,30 @@ export function FamilyMap() {
   const anySharing = parents.some((p) => p.sharing);
   const loading = live && liveParents === null;
 
-  // 전체 부모님 마커 (모든 부모님 표시)
-  const markers = parents.map((p) => ({
-    x: p.marker.x,
-    y: p.marker.y,
-    emoji: p.emoji,
-    label: p.label,
-    color: "var(--brand)",
-    active: true,
-    stale: !p.sharing,
-  }));
-  // 카카오맵용 실좌표 마커
+  // 카카오맵용 실좌표 마커 (공유 중인 부모님 전체)
   const geoMarkers = parents
     .filter((p) => p.coord && p.sharing)
     .map((p) => ({ ...(p.coord as GeoPoint), emoji: p.emoji, label: p.label, color: "var(--brand)" }));
 
   // 선택된 부모님의 위치정보
   const selectedParent = selectedParentId ? parents.find((p) => p.userId === selectedParentId) : null;
-  // 지도: 선택된 부모님만 표시 (포커스 효과)
-  const focusMarkers = selectedParent
-    ? [
-        {
-          x: selectedParent.marker.x,
-          y: selectedParent.marker.y,
-          emoji: selectedParent.emoji,
-          label: selectedParent.label,
-          color: "var(--brand)",
-          active: true,
-          stale: !selectedParent.sharing,
-        },
-      ]
-    : markers.slice(0, 1);
-  const focusGeoMarkers = selectedParent && selectedParent.coord && selectedParent.sharing
-    ? [{ ...selectedParent.coord, emoji: selectedParent.emoji, label: selectedParent.label, color: "var(--brand)" }]
-    : geoMarkers.slice(0, 1);
+  // 지도: 등록된 부모님 전체를 동시에 표시. 선택된 부모님만 강조(active) 처리한다.
+  const focusMarkers = parents.map((p) => ({
+    x: p.marker.x,
+    y: p.marker.y,
+    emoji: p.emoji,
+    label: p.label,
+    color: "var(--brand)",
+    active: selectedParentId ? p.userId === selectedParentId : true,
+    stale: !p.sharing,
+  }));
+  // 카카오맵용: 공유 중인 부모님 전체를 동시에 표시
+  const focusGeoMarkers = geoMarkers;
+  // 지도 중심: 선택된 부모님 우선, 없으면 첫 공유 부모님
+  const focusCenter =
+    (selectedParent && selectedParent.coord && selectedParent.sharing
+      ? selectedParent.coord
+      : geoMarkers[0]) ?? undefined;
 
   // 데모 모드: 첫 번째 부모님 기본 선택
   React.useEffect(() => {
@@ -364,10 +364,10 @@ export function FamilyMap() {
       <div style={{ flex: 1, position: "relative" }}>
         <MapView
           markers={focusMarkers}
-          dim={!selectedParent?.sharing}
-          grey={!selectedParent?.sharing}
+          dim={!anySharing}
+          grey={!anySharing}
           geoMarkers={focusGeoMarkers.length ? focusGeoMarkers : undefined}
-          geoCenter={focusGeoMarkers[0]}
+          geoCenter={focusCenter}
         />
 
         {/* off banner — 공유 중인 부모님이 한 명도 없을 때 */}
