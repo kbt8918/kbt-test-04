@@ -103,8 +103,9 @@
 ### 3.3 시맨틱 및 맵 그래픽 컬러 (Semantic & Graphic Overlay)
 
 *   **Danger (Crimson Red - `#D32F2F`):** SOS 긴급 버튼, SOS 카운트다운 배경, 안전 구역 이탈 알람 텍스트 및 경보 아이콘.
-*   **Danger Light (Soft Red - `#FFEBEE`):** SOS 수신 팝업 다이얼로그 배경색.
+*   **Danger Light (Soft Red - `#FFEBEE`):** SOS 수신 팝업 다이얼로그 배경색, 상단 Error 안내 배너 배경.
 *   **Success (Deep Blue/Teal - `#1976D2`):** 안전 구역 진입 완료 배지, 정상 확인 상태 배지.
+*   **Info (Soft Blue - `#E3F2FD`):** 구글 소셜 연동 중복 등 사용자 안내용 상단 Info 배너 배경, 텍스트는 Dark Blue(`#0D47A1`).
 *   **Map Safe Zone Circle (`rgba(46, 125, 50, 0.15)`):** 실시간 카카오맵 상에 드로잉되는 안전 구역 반투명 민트-녹색 오버레이 서클.
 *   **Map Breached Zone Circle (`rgba(211, 47, 47, 0.15)`):** 이탈 감지 순간 적색으로 깜빡이는 위험 지오펜스 오버레이 서클.
 
@@ -186,6 +187,10 @@ caption (12px / SemiB)    ===>  상태 배지용 텍스트
     *   **스타일:** `bg-forest text-white hover:bg-forest-dark`
     *   **크기:** 모바일 높이 **48px 고정** (PC 어드민 40px), 둥글기 테두리 `8px (rounded-lg)` 적용.
     *   **폰트:** `heading-2 (20px) / Bold` (부모님 뷰), `heading-3 (16px) / SemiBold` (자녀 뷰).
+*   **Social Login Button (Google):**
+    *   **스타일:** `bg-white text-gray-800 border border-gray-200 hover:bg-gray-50`
+    *   **크기:** 모바일 높이 **48px 고정**, 둥글기 테두리 `8px (rounded-lg)`.
+    *   **레이아웃:** 좌측 구글 'G' 로고 아이콘, 중앙 텍스트 정렬.
 *   **SOS Large Button (부모님 메인):**
     *   **스타일:** 붉은색(`bg-red-600`) 원형 아이콘. 지름 **120px 이상** 크기 보장.
     *   **그림자:** `box-shadow: 0 8px 24px rgba(211, 47, 47, 0.4);`로 시각적 입체감 부여.
@@ -198,12 +203,15 @@ caption (12px / SemiB)    ===>  상태 배지용 텍스트
 *   **포커스(Focus) 상태:** `border-color: Forest Green` (`#2E7D32`), 배경색 `Soft Mint` (`#E8F5E9`) 틴트 전환.
 *   **에러(Error) 상태:** `border-color: Crimson Red` (`#D32F2F`), 인라인 가이드 텍스트 `Danger Red`로 노출.
 
-### 6.3 카드 & 대화 상자 (Cards & Modals)
+### 6.3 카드, 배너 & 대화 상자 (Cards, Banners & Modals)
 
 *   **카드 컴포넌트:** 테두리 `rounded-2xl` (`16px`), 그림자 `shadow-sm` (`box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);`).
+*   **상단 배너 (Top Banners):**
+    *   로그인 예외 처리(예: 구글 계정 중복 가입 등) 안내용 최상단 고정 알림 배너.
+    *   **스타일:** Info 배너는 `Soft Blue (#E3F2FD)` 배경에 `Dark Blue (#0D47A1)` 텍스트, Error 배너는 `Soft Red (#FFEBEE)` 배경에 `Crimson Red (#D32F2F)` 텍스트 적용. `body-sm (13px)` 폰트.
 *   **다이얼로그 모달:**
     *   **부모님용:** 화면 중앙이 아닌 **바텀시트(BottomSheet) 형태**로 하단에서 슬라이드 업 하도록 설계하여 모바일 한 손 조작성 강화.
-    *   **자녀용 SOS 팝업:** 긴급 상황을 상징하도록 최상층 레이어(`z-index: 9999`)에 위치하며, 화면 전체에 딤 처리(`rgba(0, 0, 0, 0.6)`) 및 모달 테두리에 2px 두께의 레드 외곽선 추가 적용.
+    *   **자녀용 SOS 팝업:** 긴급 상황을 상징하도록 최상단 레이어(`z-index: 9999`)에 위치하며, 화면 전체에 딤 처리(`rgba(0, 0, 0, 0.6)`) 및 모달 테두리에 2px 두께의 레드 외곽선 추가 적용.
 
 ---
 
@@ -240,3 +248,12 @@ caption (12px / SemiB)    ===>  상태 배지용 텍스트
     ```
 *   **Loading Skeleton Effect:**
     *   데이터 요청 중 렌더링 지연 시 빈 백지를 보여주지 않고 회색 카드형 실루엣이 좌에서 우로 은은하게 반짝이는 스켈레톤 애니메이션(`animate-pulse`)을 UI 전반에 기본 탑재합니다.
+
+---
+
+## 8. 변경 이력 (Revision History)
+
+| 버전 | 변경일 | 변경자 | 변경 내용 |
+|:---|:---|:---|:---|
+| **v1.0** | 2026-05-31 | 디자인 및 기획팀 PM | 최초 제정 — 폰트, 색상, 아이콘, 마이크로 애니메이션 정의 등 |
+| **v1.1** | 2026-06-08 | 디자인 및 기획팀 PM | 구글 소셜 로그인 버튼(Social Login Button) 스펙 및 Info/Error 상단 배너 컬러 토큰 추가 |

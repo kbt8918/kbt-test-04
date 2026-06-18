@@ -249,6 +249,35 @@ graph TD
 - **네이티브 모듈 금지**: bcrypt 대신 bcryptjs 사용 (서버리스 환경)
 - **환경변수** (Vercel 대시보드 등록): SUPABASE_URL, SUPABASE_KEY, JWT_SECRET, DATABASE_URL, KAKAO_MAP_API_KEY, FCM_SERVER_KEY, KAKAO_ALIMTALK_API_KEY, SMS_API_KEY
 
+## 프로젝트 전용 스킬 (Claude Code Skills)
+
+이 프로젝트에서 사용할 수 있는 커스텀 스킬 목록입니다. 대화에서 `/스킬명`으로 호출하거나, "sb-creator-kbt 실행해줘"처럼 이름을 언급하면 자동으로 해당 스킬을 불러옵니다.
+
+| 슬래시 명령 | 스킬 | 용도 |
+|------------|------|------|
+| `/sb-creator-kbt` | HTML 화면설계서 생성기 (kbt 확장판) | 실제 구현 화면 스크린샷 기반 화면설계서 HTML 생성. 4열 디스크립션 테이블(No./영역/요소/설명), 번호 인디케이터 오버레이, PDF/편집가능PPTX 내보내기 포함. |
+
+### sb-creator-kbt 스킬 규칙 (화면설계서 생성 시 항상 준수)
+
+**디스크립션 테이블 형식 (4열 + 7개 조건)**:
+- 열 구성: `No. | 영역 | 요소 | 설명`
+- 설명 내 조건 항목 순서: 노출조건 → 입력조건 → 출력조건 → 인터랙션 → 예외 Case → 관리자 화면 연동 → BE 연동
+  - 관리자 화면 연동: 해당 요소·데이터가 관리자 화면(Admin View)과 연동되는 처리(회원 관리 반영, 운영자 모니터링/통계 노출, SMS·알림톡 발송 트리거, 운영 로그 기록 등). 관리자 화면과 무관하면 생략.
+  - 관리자 화면 연동은 BE 연동 바로 위에 위치
+- **생략 규칙**: 조건 항목에 내용이 없으면 해당 레이블 전체를 생략. "없음."을 쓰지 않는다.
+
+**인디케이터 좌표 규칙 (380x422px 모바일 캡처 기준)**:
+- 전폭 요소(헤더, 탭, 입력 필드, 버튼): `left:113px`
+- 대형 원형 버튼(SOS, 음성): `left:145px`
+- 지도 내 마커: `left:120~130px`
+- 우상단 아이콘(설정 등): `left:243px`
+
+**CSS 기준**:
+- 우측 패널: `grid-template-columns: 1fr 480px`
+- live-screen-wrap: `background: #fff; padding: 0;`
+- `.col-area`: 영역 열, `width: 60px; font-size: 11px; color: #6c757d;`
+- `.cond-label`: 조건 레이블, `font-weight: 600; color: #343a40;`
+
 ## n8n 워크플로우 자산
 
 | # | 파일 | 트리거 | 용도 | 주차 |

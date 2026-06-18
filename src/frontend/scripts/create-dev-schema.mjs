@@ -106,6 +106,23 @@ for (const file of files) {
   }
 }
 
+// 4) PostgREST 역할에 dev 스키마 사용/조작 권한 부여.
+//    public 과 달리 새 스키마는 기본 권한이 없으므로 명시적으로 GRANT 해야
+//    REST 클라이언트가 접근 가능하다. (운영 public 은 미변경)
+//    범위 최소화: 로컬 개발은 service_role 키로만 동작하므로 service_role 에만 부여한다.
+//    (anon/authenticated 에는 부여하지 않아 dev 스키마는 service_role 외 접근 불가)
+await client.query(`
+  grant usage on schema dev to service_role;
+  grant all on all tables in schema dev to service_role;
+  grant all on all sequences in schema dev to service_role;
+  alter default privileges in schema dev grant all on tables to service_role;
+  alter default privileges in schema dev grant all on sequences to service_role;
+`);
+console.log("dev 스키마 권한 부여 완료 (service_role 한정).");
+
+// PostgREST 스키마 캐시 리로드 — 새 권한/테이블을 즉시 반영
+await client.query(`notify pgrst, 'reload schema';`);
+
 const { rows } = await client.query(
   "select table_name from information_schema.tables where table_schema='dev' order by table_name"
 );

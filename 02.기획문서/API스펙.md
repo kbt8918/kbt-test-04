@@ -4,11 +4,11 @@
 |------|------|
 | 프로젝트명 | 부모님 위치 확인 서비스 (안심맵, AnsimMap) |
 | 문서 번호 | DOC-07 |
-| 문서 버전 | v1.0 |
+| 문서 버전 | v1.1 |
 | 작성일 | 2026-05-31 |
-| 최종 수정일 | 2026-05-31 |
+| 최종 수정일 | 2026-06-08 |
 | 작성자 | PM |
-| 참조 문서 | 기능명세서.md (v1.0) |
+| 참조 문서 | 기능명세서.md (v1.2) |
 
 ---
 
@@ -90,6 +90,8 @@
 | API-027 | GET | `/api/admin/alimtalk/history` | 알림톡 발송 이력 조회 | F-025 |
 | API-028 | GET | `/api/admin/stats` | 통계 조회 | F-026 |
 | API-029 | PATCH | `/api/users/me/settings` | 사용자 설정 저장 | F-027 |
+| API-030 | GET | `/api/location/current/:groupId/parents` | 다중 부모님 동시 위치 조회 | F-029 |
+| API-031 | PATCH | `/api/groups/:id/members` | 부모님 호칭(관계) 지정 | F-030 |
 | WS-001 | WebSocket | `/ws` | 실시간 위치·채팅 | F-009, F-011, F-018 |
 
 ---
@@ -1470,6 +1472,121 @@ Set-Cookie 헤더: `access_token=; HttpOnly; Secure; Max-Age=0`
 
 ---
 
+### API-030. 다중 부모님 동시 위치 조회
+
+| 항목 | 내용 |
+|------|------|
+| Method | GET |
+| URL | `/api/location/current/:groupId/parents` |
+| 인증 | 필요 (JWT 쿠키, 해당 그룹 구성원) |
+| 설명 | 그룹 내 모든 부모님(role=parent)의 최신 위치를 한 번에 반환한다. 요금제(plan)별 한도(Free 2명 / Pro 무제한)까지만 위치를 노출하며, 위치 공유 OFF인 부모님은 좌표를 null로 반환한다. |
+| 관련 기능 | F-029 |
+
+**Path 파라미터**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| `groupId` | string | Y | 그룹 UUID |
+
+**Response (200 OK)**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "plan": "free",
+    "planLimit": 2,
+    "totalParents": 3,
+    "visibleCount": 2,
+    "parents": [
+      {
+        "userId": "uuid-parent-1",
+        "name": "김아버지",
+        "relation": "아버지",
+        "locationSharing": true,
+        "latitude": 37.5665350,
+        "longitude": 126.9780020,
+        "accuracy": 15.0,
+        "timestamp": "2026-06-08T10:30:00Z"
+      },
+      {
+        "userId": "uuid-parent-2",
+        "name": "이어머니",
+        "relation": "어머니",
+        "locationSharing": false,
+        "latitude": null,
+        "longitude": null,
+        "accuracy": null,
+        "timestamp": null
+      }
+    ]
+  }
+}
+```
+
+> `planLimit`이 `null`이면 Pro 플랜(무제한)을 의미한다. `totalParents > visibleCount`인 경우 한도 초과 부모님은 응답에서 제외되며, 클라이언트는 업그레이드 유도 UI를 노출한다.
+
+**에러 Response**
+
+| 상태 코드 | 에러 코드 | 조건 |
+|-----------|-----------|------|
+| 401 | `UNAUTHORIZED` | 인증 실패 |
+| 403 | `FORBIDDEN` | 해당 그룹 구성원 아님 |
+
+---
+
+### API-031. 부모님 호칭(관계) 지정
+
+| 항목 | 내용 |
+|------|------|
+| Method | PATCH |
+| URL | `/api/groups/:id/members` |
+| 인증 | 필요 (JWT 쿠키, 해당 그룹 구성원) |
+| 설명 | 그룹 내 부모님 구성원의 호칭(어머니·아버지 등)을 지정하거나 해제한다. 요청자와 대상 모두 동일 그룹 구성원이어야 한다. |
+| 관련 기능 | F-030 |
+
+**Path 파라미터**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| `id` | string | Y | 그룹 UUID |
+
+**Request Body**
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `userId` | string | Y | 호칭을 지정할 대상 구성원 UUID |
+| `relation` | string \| null | N | 호칭 문자열(1~20자). `null` 또는 빈 문자열이면 호칭 해제 |
+
+```json
+{
+  "userId": "uuid-parent-1",
+  "relation": "아버지"
+}
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "userId": "uuid-parent-1",
+    "relation": "아버지"
+  }
+}
+```
+
+**에러 Response**
+
+| 상태 코드 | 에러 코드 | 조건 |
+|-----------|-----------|------|
+| 400 | `BAD_REQUEST` | userId 누락 또는 호칭이 1~20자 형식 위반 |
+| 401 | `UNAUTHORIZED` | 인증 실패 |
+| 403 | `FORBIDDEN` | 요청자 또는 대상이 해당 그룹 구성원 아님 |
+
+---
+
 ## WebSocket 명세
 
 ### WS-001. 실시간 위치·채팅
@@ -1513,3 +1630,4 @@ Set-Cookie 헤더: `access_token=; HttpOnly; Secure; Max-Age=0`
 | 버전 | 변경일 | 변경자 | 변경 내용 |
 |------|--------|--------|-----------|
 | v1.0 | 2026-05-31 | PM | 최초 작성 — 기능명세서 v1.0 기반 API-001~API-029 및 WS-001 전체 정의 |
+| v1.1 | 2026-06-08 | PM | 프론트엔드 구현 동기화 — API-030(다중 부모님 동시 위치 조회, 플랜 한도), API-031(부모님 호칭 지정) 추가 |
