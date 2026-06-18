@@ -160,7 +160,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "url": "YOUR_SLACK_WEBHOOK_URL",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ text: ':books: *전자책 자동 생성 완료*', blocks: [ { type: 'header', text: { type: 'plain_text', text: ':books: 오늘의 전자책 생성 완료' } }, { type: 'section', fields: [ { type: 'mrkdwn', text: '*제목*\\n' + $json.book_title }, { type: 'mrkdwn', text: '*카테고리*\\n' + $json.category + ' / ' + $json.level }, { type: 'mrkdwn', text: '*슬러그*\\n' + $json.slug }, { type: 'mrkdwn', text: '*상태*\\nGitHub: ' + ($json.github_ok ? '✅' : '❌') + '  DB: ' + ($json.supabase_ok ? '✅' : '❌') } ] }, { type: 'actions', elements: [ { type: 'button', text: { type: 'plain_text', text: '사이트 확인' }, url: $json.site_url }, { type: 'button', text: { type: 'plain_text', text: 'GitHub 파일' }, url: $json.github_url } ] } ] }) }}",

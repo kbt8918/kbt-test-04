@@ -49,7 +49,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "url": "YOUR_SLACK_WEBHOOK_URL",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.slackPayload) }}",
